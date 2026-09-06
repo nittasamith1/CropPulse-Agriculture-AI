@@ -33,18 +33,18 @@ You already have a cluster at `cluster0.xdax7ct.mongodb.net`. Make sure:
 4. Set these **environment variables** in the Render dashboard:
    - `MONGODB_URI` → your Atlas URI
    - `SECRET_KEY` → a random 32+ character string (generate with `python -c "import secrets; print(secrets.token_hex(32))"`)
-5. Deploy → your API will be live at `https://CropPulse-backend.onrender.com`
+5. Deploy → your API will be live at `https://croppulse-agriculture-ai.onrender.com`
 
 ### Option B: Manual
 1. **New Web Service** → Connect GitHub repo
 2. **Build Command:** `pip install -r requirements.txt`
-3. **Start Command:** `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+3. **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 4. **Python Version:** 3.11
 5. Add all env vars from `.env.example`
 
 ### Verify Backend
 ```bash
-curl https://CropPulse-backend.onrender.com/api/health
+curl https://croppulse-agriculture-ai.onrender.com/api/health
 # → {"status":"healthy","database":"connected",...}
 ```
 
@@ -53,9 +53,9 @@ curl https://CropPulse-backend.onrender.com/api/health
 ## 3. Deploy Frontend to Vercel
 
 ### Step 1: Update API URL
-Edit `frontend/assets/js/api.js` line ~10:
+Edit `frontend/assets/js/api.js` line ~13:
 ```js
-const API_BASE_URL = "https://CropPulse-backend.onrender.com/api/v1";
+const RENDER_BACKEND = "https://croppulse-agriculture-ai.onrender.com";
 ```
 
 ### Step 2: Update vercel.json
@@ -64,8 +64,8 @@ Edit `vercel.json` to point the API proxy to your real Render URL:
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://CropPulse-backend.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://croppulse-agriculture-ai.onrender.com/api/:path*"
     }
   ]
 }
@@ -75,7 +75,7 @@ Edit `vercel.json` to point the API proxy to your real Render URL:
 1. Go to [vercel.com](https://vercel.com) → **New Project** → Import GitHub repo
 2. **Root Directory** → Set to `frontend/`
 3. **Framework Preset** → Other
-4. Deploy → your frontend is live at `https://CropPulse.vercel.app`
+4. Deploy → your frontend is live at `https://crop-pulse-agriculture-ai.vercel.app`
 
 ---
 
@@ -165,7 +165,7 @@ SMTP_USER=
 SMTP_PASSWORD=
 
 # CORS (comma-separated; * for dev only)
-ALLOWED_ORIGINS=https://CropPulse.vercel.app,http://localhost:8080
+ALLOWED_ORIGINS=https://crop-pulse-agriculture-ai.vercel.app,http://localhost:8080
 
 # Logging
 LOG_LEVEL=INFO

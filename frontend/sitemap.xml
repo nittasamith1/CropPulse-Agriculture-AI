@@ -1,42 +1,42 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://CropPulse-a8352.web.app/</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/index.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/index.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/login.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/login.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/register.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/register.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/dashboard.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/dashboard.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/disease.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/disease.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/soil.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/soil.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://CropPulse-a8352.web.app/map.html</loc>
+    <loc>https://crop-pulse-agriculture-ai.vercel.app/map.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

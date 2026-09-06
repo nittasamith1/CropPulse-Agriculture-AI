@@ -1,4 +1,4 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
 
-Sitemap: https://CropPulse-a8352.web.app/sitemap.xml
+Sitemap: https://crop-pulse-agriculture-ai.vercel.app/sitemap.xml

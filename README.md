@@ -147,8 +147,8 @@ python3 -m ai_models.disease_model.train
 ### Frontend → Vercel
 1. Import the repo on [vercel.com](https://vercel.com)
 2. Set **Root Directory** to `frontend/`
-3. Update `vercel.json` → replace `croppulse-backend.onrender.com` with your Render URL
-4. Deploy
+3. Update `vercel.json` → preconfigured with `https://croppulse-agriculture-ai.onrender.com`
+4. Live site: `https://crop-pulse-agriculture-ai.vercel.app`
 
 ### Docker (Self-hosted)
 ```bash

@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "CropPulse"
     APP_ENV: str = "development"
     APP_PORT: int = 8000
-    FRONTEND_URL: str = "http://localhost:8080"
+    FRONTEND_URL: str = "https://crop-pulse-agriculture-ai.vercel.app"
 
     # ── Security ─────────────────────────────────────────────
     SECRET_KEY: str = "change-this-secret-key-in-production-use-64-chars"
@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = (
         "http://localhost:3000,http://localhost:8000,http://localhost:8080,"
         "http://127.0.0.1:3000,http://127.0.0.1:8000,http://127.0.0.1:8080,"
-        "https://croppulse.vercel.app"
+        "https://crop-pulse-agriculture-ai.vercel.app,https://croppulse.vercel.app"
     )
 
     @property
@@ -97,6 +97,7 @@ class Settings(BaseSettings):
             return [
                 "http://localhost:3000", "http://localhost:8000", "http://localhost:8080",
                 "http://127.0.0.1:8080",
+                "https://crop-pulse-agriculture-ai.vercel.app",
                 "https://croppulse.vercel.app",
             ]
         origins = [o.strip() for o in raw.split(",") if o.strip() and o.strip() != "*"]

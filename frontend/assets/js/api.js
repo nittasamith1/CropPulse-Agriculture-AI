@@ -10,7 +10,7 @@
   // ── Production: always use the absolute Render backend URL ───────────────
   // Never allow API_BASE to be empty/relative in production — that causes 503s
   // when the Vercel proxy rewrite fails or Render is cold-starting.
-  const RENDER_BACKEND = "https://croppulse-backend.onrender.com";
+  const RENDER_BACKEND = "https://croppulse-agriculture-ai.onrender.com";
 
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "" || window.location.protocol === "file:") {
     window.API_BASE = "http://localhost:8000";

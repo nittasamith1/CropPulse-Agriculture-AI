@@ -15,7 +15,7 @@ def test_cors_origins_configuration():
     origins = s.cors_origins
     assert isinstance(origins, list)
     assert any("localhost" in o for o in origins)
-    assert any("croppulse.vercel.app" in o for o in origins)
+    assert any("crop-pulse-agriculture-ai.vercel.app" in o for o in origins)
 
 
 def test_api_process_time_header(client):
