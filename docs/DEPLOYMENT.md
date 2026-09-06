@@ -1,4 +1,4 @@
-# AgriCrop Deployment Guide
+# CropPulse Deployment Guide
 
 ## Stack
 
@@ -16,7 +16,7 @@
 You already have a cluster at `cluster0.xdax7ct.mongodb.net`. Make sure:
 
 1. **Network Access** → Add `0.0.0.0/0` to allow access from Render's IPs
-2. **Database Access** → Your user `db_user` has `readWrite` on `agricrop` DB
+2. **Database Access** → Your user `db_user` has `readWrite` on `CropPulse` DB
 3. The connection string format should be:
    ```
    mongodb+srv://db_user:<password>@cluster0.xdax7ct.mongodb.net/?appName=Cluster0
@@ -33,7 +33,7 @@ You already have a cluster at `cluster0.xdax7ct.mongodb.net`. Make sure:
 4. Set these **environment variables** in the Render dashboard:
    - `MONGODB_URI` → your Atlas URI
    - `SECRET_KEY` → a random 32+ character string (generate with `python -c "import secrets; print(secrets.token_hex(32))"`)
-5. Deploy → your API will be live at `https://agricrop-backend.onrender.com`
+5. Deploy → your API will be live at `https://CropPulse-backend.onrender.com`
 
 ### Option B: Manual
 1. **New Web Service** → Connect GitHub repo
@@ -44,7 +44,7 @@ You already have a cluster at `cluster0.xdax7ct.mongodb.net`. Make sure:
 
 ### Verify Backend
 ```bash
-curl https://agricrop-backend.onrender.com/api/health
+curl https://CropPulse-backend.onrender.com/api/health
 # → {"status":"healthy","database":"connected",...}
 ```
 
@@ -55,7 +55,7 @@ curl https://agricrop-backend.onrender.com/api/health
 ### Step 1: Update API URL
 Edit `frontend/assets/js/api.js` line ~10:
 ```js
-const API_BASE_URL = "https://agricrop-backend.onrender.com/api/v1";
+const API_BASE_URL = "https://CropPulse-backend.onrender.com/api/v1";
 ```
 
 ### Step 2: Update vercel.json
@@ -65,7 +65,7 @@ Edit `vercel.json` to point the API proxy to your real Render URL:
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://agricrop-backend.onrender.com/api/$1"
+      "destination": "https://CropPulse-backend.onrender.com/api/$1"
     }
   ]
 }
@@ -75,7 +75,7 @@ Edit `vercel.json` to point the API proxy to your real Render URL:
 1. Go to [vercel.com](https://vercel.com) → **New Project** → Import GitHub repo
 2. **Root Directory** → Set to `frontend/`
 3. **Framework Preset** → Other
-4. Deploy → your frontend is live at `https://agricrop.vercel.app`
+4. Deploy → your frontend is live at `https://CropPulse.vercel.app`
 
 ---
 
@@ -85,8 +85,8 @@ For deploying on a VPS (DigitalOcean, AWS EC2, etc.):
 
 ```bash
 # Clone repo
-git clone https://github.com/youruser/agricrop.git
-cd agricrop
+git clone https://github.com/youruser/CropPulse.git
+cd CropPulse
 
 # Create .env from example
 cp .env.example .env
@@ -108,18 +108,18 @@ The backend will be at `http://your-server-ip:8000`
 The app runs in **stub mode** until real models are provided.
 
 ### Disease Model
-Place your trained MobileNetV2 Keras model at:
+Place your trained EfficientNet-B0 PyTorch model at:
 ```
-ai_models/saved_models/disease_model.h5
+ai_models/disease_model/disease_model.pth
 ```
-Expected input shape: `(1, 224, 224, 3)`, output: 38 softmax classes.
+Expected: PyTorch state dict with 38-class EfficientNet-B0 output.
 
 ### Soil Model
-Place your trained model at:
+Place your trained sklearn/XGBoost pipeline at:
 ```
-ai_models/saved_models/soil_model.pkl
+ai_models/soil_model/soil_model.pkl
 ```
-Expected: sklearn-compatible model with `predict([[temp, humidity, rainfall, wind_speed, soil_idx, prev_moisture]])`.
+Expected: joblib-serialized pipeline with `predict([[temp, humidity, rainfall, wind_speed, soil_idx, prev_moisture]])`.
 
 ---
 
@@ -132,7 +132,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-gmail@gmail.com
 SMTP_PASSWORD=your-app-password    # Gmail App Password (not regular password)
-EMAIL_FROM=noreply@agricrop.ai
+EMAIL_FROM=noreply@CropPulse.ai
 ```
 
 > **Tip:** For Gmail, enable 2FA and generate an App Password at https://myaccount.google.com/apppasswords
@@ -145,13 +145,13 @@ Copy `.env.example` and fill in:
 
 ```env
 # Core
-APP_NAME=AgriCrop
+APP_NAME=CropPulse
 APP_ENV=production
 SECRET_KEY=<generate with: python -c "import secrets; print(secrets.token_hex(32))">
 
 # MongoDB Atlas
 MONGODB_URI=mongodb+srv://db_user:PASSWORD@cluster0.xdax7ct.mongodb.net/?appName=Cluster0
-MONGODB_DB_NAME=agricrop
+MONGODB_DB_NAME=CropPulse
 
 # JWT
 ACCESS_TOKEN_EXPIRE_MINUTES=60
@@ -165,7 +165,7 @@ SMTP_USER=
 SMTP_PASSWORD=
 
 # CORS (comma-separated; * for dev only)
-ALLOWED_ORIGINS=https://agricrop.vercel.app,http://localhost:8080
+ALLOWED_ORIGINS=https://CropPulse.vercel.app,http://localhost:8080
 
 # Logging
 LOG_LEVEL=INFO

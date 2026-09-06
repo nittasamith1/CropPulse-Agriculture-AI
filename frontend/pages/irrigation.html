@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Precision Irrigation – CropPulse</title>
+  <meta name="description" content="AI-driven precision irrigation decision support combining crop coefficients, soil field capacity, and live weather."/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="../assets/css/main.css" rel="stylesheet"/>
+  <link href="../assets/css/dark-mode.css" rel="stylesheet"/>
+  <link href="../assets/css/animations.css" rel="stylesheet"/>
+  <style>
+    .action-badge-xl { display:inline-flex; align-items:center; gap:0.6rem; padding:0.75rem 1.75rem; border-radius:9999px; font-size:1.25rem; font-weight:800; letter-spacing:0.04em; }
+    .action-irrigate { background:rgba(14,165,233,0.15); color:#0ea5e9; border:1.5px solid rgba(14,165,233,0.4); }
+    .action-wait { background:rgba(234,179,8,0.15); color:#eab308; border:1.5px solid rgba(234,179,8,0.4); }
+    .action-reduce { background:rgba(168,85,247,0.15); color:#a855f7; border:1.5px solid rgba(168,85,247,0.4); }
+    .action-monitor { background:rgba(34,197,94,0.15); color:#22c55e; border:1.5px solid rgba(34,197,94,0.4); }
+    .water-metric-box { background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:1.2rem; text-align:center; }
+    .water-metric-val { font-family:'Space Grotesk',sans-serif; font-size:1.9rem; font-weight:800; color:var(--text-primary); }
+    .water-metric-label { font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-top:0.25rem; }
+    .capacity-bar-outer { height:12px; border-radius:6px; background:var(--bg-input); overflow:hidden; position:relative; }
+    .capacity-bar-inner { height:100%; border-radius:6px; transition:width 1s ease; }
+  </style>
+</head>
+<body>
+<nav class="ag-navbar"><div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
+  <button class="d-lg-none btn-ag-icon" id="sidebar-toggle">&#9776;</button>
+  <a href="/" class="brand">&#127807; CropPulse</a>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <button id="theme-toggle"><span class="toggle-icon sun-icon">&#9728;&#65039;</span><span class="toggle-icon moon-icon">&#127769;</span></button>
+    <a href="notifications.html" class="nav-icon-btn position-relative">&#128276;<span id="notif-badge" class="badge-notif hidden">0</span></a>
+    <a href="dashboard.html" class="btn-ag-secondary" style="font-size:0.82rem;padding:0.45rem 1rem;">&#8592; Dashboard</a>
+  </div>
+</div></nav>
+
+<aside class="ag-sidebar" id="sidebar">
+  <div class="sidebar-section-label">Main</div>
+  <a href="dashboard.html" class="sidebar-link"><span class="link-icon">&#127968;</span> Dashboard</a>
+  <a href="upload.html" class="sidebar-link"><span class="link-icon">&#127807;</span> Upload Leaf</a>
+  <a href="soil-prediction.html" class="sidebar-link"><span class="link-icon">&#128167;</span> Soil Prediction</a>
+  <a href="weather.html" class="sidebar-link"><span class="link-icon">&#127782;&#65039;</span> Weather</a>
+  <a href="risk.html" class="sidebar-link"><span class="link-icon">&#9888;&#65039;</span> Risk Assessment</a>
+  <a href="irrigation.html" class="sidebar-link active"><span class="link-icon">&#128668;</span> Irrigation</a>
+  <a href="map.html" class="sidebar-link"><span class="link-icon">&#128506;&#65039;</span> Disease Map</a>
+  <div class="sidebar-section-label">Records</div>
+  <a href="history.html" class="sidebar-link"><span class="link-icon">&#128203;</span> History</a>
+  <a href="notifications.html" class="sidebar-link"><span class="link-icon">&#128276;</span> Notifications <span class="link-badge hidden" id="sidebar-notif-badge">0</span></a>
+  <div class="sidebar-section-label">Account</div>
+  <a href="profile.html" class="sidebar-link"><span class="link-icon">&#128100;</span> Profile</a>
+  <a href="#" class="sidebar-link" onclick="Auth.logout()"><span class="link-icon">&#128682;</span> Logout</a>
+</aside>
+
+<main class="ag-content-area ag-page">
+  <div class="section-header mb-4">
+    <div>
+      <h2 class="section-title">&#128668; Precision Irrigation Planner</h2>
+      <p class="section-subtitle">Data-driven irrigation advisories using crop coefficients (Kc), soil field capacity, and weather forecasts</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Input Form -->
+    <div class="col-lg-5">
+      <form id="irrigation-form">
+        <div class="ag-card mb-4">
+          <div class="chart-title mb-3">&#127806; Field & Crop Parameters</div>
+          <div class="ag-form-group">
+            <label class="ag-label">Select Farm (Optional)</label>
+            <select id="farm-select" class="ag-input ag-select">
+              <option value="">No specific farm (Use coordinates)</option>
+            </select>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Crop Type</label>
+                <select id="crop-type" class="ag-input ag-select">
+                  <option value="Tomato">Tomato</option>
+                  <option value="Potato">Potato</option>
+                  <option value="Corn">Corn (Maize)</option>
+                  <option value="Wheat">Wheat</option>
+                  <option value="Apple">Apple</option>
+                  <option value="Grape">Grape</option>
+                  <option value="Pepper">Pepper</option>
+                  <option value="Strawberry">Strawberry</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Growth Stage</label>
+                <select id="growth-stage" class="ag-input ag-select">
+                  <option value="initial">Initial / Seedling (Kc ~0.6)</option>
+                  <option value="mid" selected>Mid-Season / Flowering (Kc ~1.15)</option>
+                  <option value="late">Late-Season / Ripening (Kc ~0.8)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Soil Type</label>
+                <select id="soil-type" class="ag-input ag-select">
+                  <option value="loamy" selected>Loamy (FC ~35%)</option>
+                  <option value="sandy">Sandy (FC ~20%)</option>
+                  <option value="clay">Clay (FC ~45%)</option>
+                  <option value="peaty">Peaty (FC ~55%)</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Current Soil Moisture (%)</label>
+                <input type="number" id="soil-moisture" class="ag-input" min="0" max="100" step="0.5" placeholder="Auto / e.g. 24.5"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ag-card mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="chart-title mb-0">&#128205; Location Coordinates</div>
+            <button type="button" class="btn-ag-secondary" id="get-location-btn" style="font-size:0.75rem;padding:0.3rem 0.75rem;">&#128205; Auto-Detect</button>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Latitude</label>
+                <input type="number" id="lat-input" class="ag-input" step="0.000001" placeholder="17.3850"/>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Longitude</label>
+                <input type="number" id="lon-input" class="ag-input" step="0.000001" placeholder="78.4867"/>
+              </div>
+            </div>
+          </div>
+          <small class="text-muted" style="font-size:0.75rem;">Coordinates are used to fetch real-time precipitation and 24h rainfall forecasts.</small>
+        </div>
+
+        <button type="submit" class="btn-ag-primary w-100 justify-content-center" id="calculate-btn" style="padding:0.75rem;">
+          &#128668; Generate Irrigation Recommendation
+        </button>
+      </form>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-lg-7">
+      <div id="result-section" class="hidden">
+        <!-- Main Decision Card -->
+        <div class="ag-card mb-3 text-center">
+          <div class="chart-title mb-3">&#9878;&#65039; Advisory Decision</div>
+          <div class="mb-3">
+            <div id="action-badge-container"></div>
+          </div>
+          <p id="action-reason" class="text-muted" style="font-size:0.95rem;max-width:520px;margin:0 auto 1rem;"></p>
+          <div class="d-flex justify-content-center gap-3">
+            <span class="badge" id="priority-badge" style="font-size:0.8rem;padding:0.35rem 0.85rem;"></span>
+            <span class="text-muted" style="font-size:0.82rem;" id="confidence-text"></span>
+          </div>
+        </div>
+
+        <!-- Water Metrics -->
+        <div class="ag-card mb-3">
+          <div class="chart-title mb-3">&#128167; Water Application Requirements</div>
+          <div class="row g-3 mb-3">
+            <div class="col-sm-4">
+              <div class="water-metric-box">
+                <div class="water-metric-val" id="water-depth-val">0.0 <span style="font-size:1rem;font-weight:500;">mm</span></div>
+                <div class="water-metric-label">Irrigation Depth</div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="water-metric-box">
+                <div class="water-metric-val" id="water-volume-val">0 <span style="font-size:1rem;font-weight:500;">L/ha</span></div>
+                <div class="water-metric-label">Volume Required</div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="water-metric-box">
+                <div class="water-metric-val" id="water-method-val" style="font-size:1.3rem;text-transform:capitalize;">Drip</div>
+                <div class="water-metric-label">Method Recommended</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Soil Moisture Gauge Progress -->
+          <div class="p-3" style="background:var(--bg-input);border-radius:10px;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span style="font-size:0.82rem;font-weight:600;">Current Soil Moisture vs Field Capacity</span>
+              <span style="font-size:0.82rem;font-weight:700;" id="capacity-percentage-text">--%</span>
+            </div>
+            <div class="capacity-bar-outer mb-2">
+              <div class="capacity-bar-inner" id="capacity-bar" style="width:0%;background:#0ea5e9;"></div>
+            </div>
+            <div class="d-flex justify-content-between text-muted" style="font-size:0.72rem;">
+              <span id="current-moisture-label">Moisture: --</span>
+              <span id="field-capacity-label">Field Capacity: --</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Context Card -->
+        <div class="ag-card mb-3">
+          <div class="chart-title mb-3">&#127780;&#65039; 24-Hour Forecast Context</div>
+          <div class="row g-3" id="weather-forecast-context">
+            <div class="col-6">
+              <div class="d-flex align-items-center gap-2">
+                <span style="font-size:1.5rem;">&#127783;&#65039;</span>
+                <div>
+                  <div style="font-size:0.72rem;color:var(--text-muted);">Rain Probability (24h)</div>
+                  <div style="font-size:1.1rem;font-weight:700;" id="forecast-rain-prob">--%</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center gap-2">
+                <span style="font-size:1.5rem;">&#9748;</span>
+                <div>
+                  <div style="font-size:0.72rem;color:var(--text-muted);">Expected Rain (24h)</div>
+                  <div style="font-size:1.1rem;font-weight:700;" id="forecast-rain-mm">-- mm</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="alert alert-secondary py-2 px-3 mb-3" style="font-size:0.78rem;border-radius:10px;" id="irrigation-disclaimer">
+          Notice: This precision irrigation recommendation is an AI decision-support output. Farmers should verify current field conditions.
+        </div>
+
+        <!-- Cross Links -->
+        <div class="d-flex gap-2">
+          <a href="weather.html" class="btn-ag-secondary flex-fill justify-content-center">&#127782;&#65039; Live Weather</a>
+          <a href="risk.html" class="btn-ag-secondary flex-fill justify-content-center">&#9888;&#65039; Risk Assessment</a>
+          <a href="soil-prediction.html" class="btn-ag-primary flex-fill justify-content-center">&#128167; Predict Soil</a>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-result" class="ag-card text-center py-5">
+        <div style="font-size:4rem;margin-bottom:1rem;">&#128668;</div>
+        <h5 style="color:var(--text-muted);">Configure parameters to generate irrigation plan</h5>
+        <p class="text-muted" style="font-size:0.85rem;max-width:440px;margin:0 auto;">
+          Our agronomic engine computes soil moisture deficits, applies crop-specific coefficients (Kc), and accounts for 24-hour weather forecasts to avoid overwatering.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="ag-toast-container" class="ag-toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/irrigation.js"></script>
+<script>
+  document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
+    document.getElementById("sidebar")?.classList.toggle("open");
+  });
+</script>
+</body>
+</html>

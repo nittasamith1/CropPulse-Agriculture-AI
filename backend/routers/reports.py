@@ -1,5 +1,5 @@
-"""
-AgriCrop – Reports Router
+﻿"""
+CropPulse – Reports Router
 POST /api/v1/reports/generate   – Generate PDF report
 GET  /api/v1/reports/           – List user's reports
 GET  /api/v1/reports/{id}       – Get single report

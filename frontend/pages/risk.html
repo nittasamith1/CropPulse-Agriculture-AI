@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crop Risk Assessment - CropPulse</title>
+  <meta name="description" content="AI-powered multi-factor crop disease risk assessment combining weather, disease history, and environmental data."/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="../assets/css/main.css" rel="stylesheet"/>
+  <link href="../assets/css/dark-mode.css" rel="stylesheet"/>
+  <link href="../assets/css/animations.css" rel="stylesheet"/>
+  <style>
+    .risk-score-ring { position:relative; display:inline-flex; align-items:center; justify-content:center; }
+    .risk-badge-xl { display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1.25rem; border-radius:9999px; font-size:1rem; font-weight:700; }
+    .risk-low { background:rgba(22,163,74,0.15); color:#22c55e; border:1px solid rgba(22,163,74,0.3); }
+    .risk-moderate { background:rgba(234,179,8,0.15); color:#eab308; border:1px solid rgba(234,179,8,0.3); }
+    .risk-high { background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3); }
+    .risk-critical { background:rgba(220,38,38,0.15); color:#ef4444; border:1px solid rgba(220,38,38,0.3); }
+    .factor-row { display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0; border-bottom:1px solid var(--border); }
+    .factor-row:last-child { border-bottom:none; }
+    .factor-bar-outer { flex:1; height:8px; border-radius:4px; background:var(--bg-input); overflow:hidden; }
+    .factor-bar-inner { height:100%; border-radius:4px; transition:width 1s ease; }
+  </style>
+</head>
+<body>
+<nav class="ag-navbar"><div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
+  <button class="d-lg-none btn-ag-icon" id="sidebar-toggle">&#9776;</button>
+  <a href="/" class="brand">&#127807; CropPulse</a>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <button id="theme-toggle"><span class="toggle-icon sun-icon">&#9728;&#65039;</span><span class="toggle-icon moon-icon">&#127769;</span></button>
+    <a href="notifications.html" class="nav-icon-btn position-relative">&#128276;<span id="notif-badge" class="badge-notif hidden">0</span></a>
+    <a href="dashboard.html" class="btn-ag-secondary" style="font-size:0.82rem;padding:0.45rem 1rem;">&#8592; Dashboard</a>
+  </div>
+</div></nav>
+
+<aside class="ag-sidebar" id="sidebar">
+  <div class="sidebar-section-label">Main</div>
+  <a href="dashboard.html" class="sidebar-link"><span class="link-icon">&#127968;</span> Dashboard</a>
+  <a href="upload.html" class="sidebar-link"><span class="link-icon">&#127807;</span> Upload Leaf</a>
+  <a href="soil-prediction.html" class="sidebar-link"><span class="link-icon">&#128167;</span> Soil Prediction</a>
+  <a href="weather.html" class="sidebar-link"><span class="link-icon">&#127782;&#65039;</span> Weather</a>
+  <a href="risk.html" class="sidebar-link active"><span class="link-icon">&#9888;&#65039;</span> Risk Assessment</a>
+  <a href="irrigation.html" class="sidebar-link"><span class="link-icon">&#128668;</span> Irrigation</a>
+  <a href="map.html" class="sidebar-link"><span class="link-icon">&#128506;&#65039;</span> Disease Map</a>
+  <div class="sidebar-section-label">Records</div>
+  <a href="history.html" class="sidebar-link"><span class="link-icon">&#128203;</span> History</a>
+  <a href="notifications.html" class="sidebar-link"><span class="link-icon">&#128276;</span> Notifications <span class="link-badge hidden" id="sidebar-notif-badge">0</span></a>
+  <div class="sidebar-section-label">Account</div>
+  <a href="profile.html" class="sidebar-link"><span class="link-icon">&#128100;</span> Profile</a>
+  <a href="#" class="sidebar-link" onclick="Auth.logout()"><span class="link-icon">&#128682;</span> Logout</a>
+</aside>
+
+<main class="ag-content-area ag-page">
+  <div class="section-header mb-4">
+    <div>
+      <h2 class="section-title">&#9888;&#65039; Crop Risk Assessment</h2>
+      <p class="section-subtitle">Multi-factor AI analysis of crop disease risk using weather, history, and environmental data</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Input Form -->
+    <div class="col-lg-5">
+      <form id="risk-form">
+        <div class="ag-card mb-4">
+          <div class="chart-title mb-3">&#127806; Farm & Crop Details</div>
+          <div class="ag-form-group">
+            <label class="ag-label">Select Farm (Optional)</label>
+            <select id="farm-select" class="ag-input ag-select">
+              <option value="">No specific farm</option>
+            </select>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Crop Type</label>
+                <select id="crop-type" class="ag-input ag-select">
+                  <option value="tomato">Tomato</option>
+                  <option value="potato">Potato</option>
+                  <option value="corn">Corn (Maize)</option>
+                  <option value="apple">Apple</option>
+                  <option value="grape">Grape</option>
+                  <option value="strawberry">Strawberry</option>
+                  <option value="pepper">Pepper</option>
+                  <option value="wheat">Wheat</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Season</label>
+                <select id="season" class="ag-input ag-select">
+                  <option value="kharif">Kharif (Monsoon)</option>
+                  <option value="rabi">Rabi (Winter)</option>
+                  <option value="zaid">Zaid (Summer)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Latitude</label>
+                <input type="number" id="lat-input" class="ag-input" placeholder="e.g. 18.5204" step="0.000001"/>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Longitude</label>
+                <input type="number" id="lon-input" class="ag-input" placeholder="e.g. 73.8567" step="0.000001"/>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="get-location-btn" class="btn-ag-secondary mb-3" style="font-size:0.82rem;">&#128205; Auto-detect Location</button>
+        </div>
+
+        <div class="ag-card mb-4">
+          <div class="chart-title mb-3">&#127783;&#65039; Environmental Conditions</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Temperature (&#176;C) <span id="temp-val" style="color:var(--primary-light);">25</span></label>
+                <input type="range" id="temperature" min="0" max="50" value="25" oninput="document.getElementById('temp-val').textContent=this.value"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Humidity (%) <span id="hum-val" style="color:var(--primary-light);">70</span></label>
+                <input type="range" id="humidity" min="0" max="100" value="70" oninput="document.getElementById('hum-val').textContent=this.value"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Rainfall (mm) <span id="rain-val" style="color:var(--primary-light);">20</span></label>
+                <input type="range" id="rainfall" min="0" max="200" value="20" oninput="document.getElementById('rain-val').textContent=this.value"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="ag-form-group">
+                <label class="ag-label">Recent Disease Count <span id="disease-val" style="color:var(--primary-light);">0</span></label>
+                <input type="range" id="recent-disease-count" min="0" max="20" value="0" oninput="document.getElementById('disease-val').textContent=this.value"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="assess-btn" class="btn-ag-primary w-100" style="padding:0.9rem;font-size:1rem;justify-content:center;">
+          &#9888;&#65039; Assess Crop Risk
+        </button>
+      </form>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="col-lg-7">
+      <div id="result-section" class="hidden">
+        <div class="ag-card mb-3 text-center">
+          <div class="chart-title mb-3">&#127919; Overall Risk Score</div>
+          <div class="mb-3">
+            <div class="risk-score-ring">
+              <svg width="150" height="150" viewBox="0 0 150 150">
+                <circle cx="75" cy="75" r="65" fill="none" stroke="var(--bg-input)" stroke-width="14"/>
+                <circle id="risk-circle" cx="75" cy="75" r="65" fill="none" stroke="#f97316" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="408.4" stroke-dashoffset="408.4"
+                  style="transition:stroke-dashoffset 1.5s ease;transform:rotate(-90deg);transform-origin:center;"/>
+              </svg>
+              <div style="position:absolute;text-align:center;">
+                <div id="risk-score-val" style="font-family:'Space Grotesk',sans-serif;font-size:2rem;font-weight:800;color:var(--text-primary);">--</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">/ 100</div>
+              </div>
+            </div>
+          </div>
+          <div id="risk-level-badge" class="mb-2"></div>
+          <p id="risk-summary" class="text-muted" style="font-size:0.88rem;max-width:420px;margin:0 auto;"></p>
+        </div>
+
+        <div class="ag-card mb-3">
+          <div class="chart-title mb-3">&#128202; Risk Factor Breakdown</div>
+          <div id="risk-factors"></div>
+        </div>
+
+        <div class="ag-card mb-3">
+          <div class="chart-title mb-3">&#128221; Recommended Actions</div>
+          <div id="risk-actions"></div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <a href="irrigation.html" class="btn-ag-secondary flex-fill justify-content-center">&#128668; Irrigation Plan</a>
+          <a href="upload.html" class="btn-ag-primary flex-fill justify-content-center">&#127807; Scan Leaf</a>
+        </div>
+      </div>
+
+      <div id="empty-result" class="ag-card text-center py-5">
+        <div style="font-size:4rem;margin-bottom:1rem;">&#9888;&#65039;</div>
+        <h5 style="color:var(--text-muted);">Fill in the details and run risk assessment</h5>
+        <p class="text-muted" style="font-size:0.85rem;">Our AI engine will analyze temperature, humidity, rainfall, disease history, and more to compute a comprehensive crop risk score.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="ag-toast-container" class="ag-toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/risk.js"></script>
+<script>
+  document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
+    document.getElementById("sidebar")?.classList.toggle("open");
+  });
+</script>
+</body>
+</html>

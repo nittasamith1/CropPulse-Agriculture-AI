@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Disease Result – AgriCrop</title>
+  <title>Disease Result – CropPulse</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -18,7 +18,7 @@
 </head>
 <body>
 <nav class="ag-navbar"><div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
-  <a href="/" class="brand">🌱 AgriCrop</a>
+  <a href="/" class="brand">🌱 CropPulse</a>
   <div class="ms-auto d-flex gap-2 align-items-center">
     <button id="theme-toggle"><span class="toggle-icon sun-icon">☀️</span><span class="toggle-icon moon-icon">🌙</span></button>
     <a href="upload.html" class="btn-ag-secondary" style="font-size:0.82rem;padding:0.45rem 1rem;">← New Scan</a>
@@ -37,11 +37,23 @@
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
         <h2 class="section-title" id="result-title">Disease Analysis Result</h2>
-        <p class="section-subtitle">Powered by MobileNetV2 Transfer Learning</p>
+        <p class="section-subtitle">Powered by PyTorch EfficientNet-B0 Transfer Learning & Grad-CAM</p>
       </div>
       <div class="d-flex gap-2">
         <button onclick="window.print()" class="btn-ag-secondary" style="font-size:0.82rem;">🖨️ Print</button>
         <button id="generate-report-btn" class="btn-ag-primary" style="font-size:0.82rem;">📄 Download Report</button>
+      </div>
+    </div>
+
+    <div id="uncertain-banner" class="hidden mb-4" style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.3);border-radius:10px;padding:1rem 1.25rem;">
+      <div class="d-flex align-items-center gap-3">
+        <div style="font-size:1.8rem;">⚠️</div>
+        <div>
+          <div style="font-weight:600;color:#eab308;font-size:1rem;">Low Confidence — Prediction Uncertain</div>
+          <div style="font-size:0.85rem;color:var(--text-muted);margin-top:2px;">
+            The AI model's confidence is below threshold (&lt; 65%). Results cannot confirm healthy or diseased status. We recommend uploading a closer, well-lit, and in-focus photo of the leaf symptoms.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -62,9 +74,9 @@
                 stroke-dasharray="345.6" stroke-dashoffset="345.6"/>
             </svg>
             <div class="cr-value" id="conf-value">0%</div>
-            <div class="cr-label">Accuracy</div>
+            <div class="cr-label">Confidence</div>
           </div>
-          <div class="mt-3" style="font-size:0.8rem;color:var(--text-muted);" id="model-version-label">MobileNetV2-v1</div>
+          <div class="mt-3" style="font-size:0.8rem;color:var(--text-muted);" id="model-version-label">Model: EfficientNet-B0-v1</div>
         </div>
       </div>
 
@@ -156,7 +168,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const urlId = new URLSearchParams(window.location.search).get("id");
   if (!result && urlId) {
-    try { result = await AgriCropAPI.disease.getById(urlId); } catch {}
+    try { result = await CropPulseAPI.disease.getById(urlId); } catch {}
   }
 
   const loading = document.getElementById("loading-state");
@@ -173,7 +185,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Image
   const img = document.getElementById("result-image");
-  if (img && result.image_url) img.src = result.image_url;
+  const cachedPreview = sessionStorage.getItem("ag_last_uploaded_preview");
+  if (img) {
+    if (result.explanation_data_uri) {
+      img.src = result.explanation_data_uri;
+    } else if (cachedPreview) {
+      img.src = cachedPreview;
+    } else if (result.image_url) {
+      const base = window.API_BASE || "http://localhost:8000";
+      img.src = result.image_url.startsWith("http") ? result.image_url : `${base}${result.image_url}`;
+    }
+  }
 
   // Disease name
   document.getElementById("disease-name").textContent = result.disease_name || "Unknown";
@@ -184,8 +206,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sevEl = document.getElementById("result-severity-badge");
   if (sevEl) sevEl.innerHTML = Utils.severityBadge(result.severity || "unknown");
 
-  // Page title update
-  document.getElementById("result-title").textContent = result.is_healthy ? "✅ Crop is Healthy!" : `🦠 ${result.disease_name}`;
+  // Prediction Status & Title
+  const isUncertain = result.prediction_status === "UNCERTAIN" || (!result.is_healthy && (result.confidence || 0) < 0.65 && result.prediction_status !== "DISEASE_DETECTED");
+  const uncertainBanner = document.getElementById("uncertain-banner");
+
+  if (isUncertain) {
+    if (uncertainBanner) uncertainBanner.classList.remove("hidden");
+    document.getElementById("result-title").textContent = "⚠️ Diagnosis Uncertain";
+    document.getElementById("disease-name").textContent = "Uncertain / Indeterminate";
+  } else if (result.is_healthy) {
+    if (uncertainBanner) uncertainBanner.classList.add("hidden");
+    document.getElementById("result-title").textContent = "✅ Crop is Healthy!";
+  } else {
+    if (uncertainBanner) uncertainBanner.classList.add("hidden");
+    document.getElementById("result-title").textContent = `🦠 ${result.disease_name}`;
+  }
 
   // Confidence ring
   const pct = (result.confidence || 0) * 100;
@@ -194,23 +229,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   const offset = circumference - (pct / 100) * circumference;
   setTimeout(() => {
     circle.style.strokeDashoffset = offset;
-    circle.style.stroke = pct > 80 ? "#dc2626" : pct > 60 ? "#f97316" : "#16a34a";
+    circle.style.stroke = pct >= 70 ? "#16a34a" : pct >= 50 ? "#f97316" : "#dc2626";
     Utils.animateCounter(document.getElementById("conf-value"), pct, 1500, "%");
   }, 300);
 
   const mvEl = document.getElementById("model-version-label");
-  if (mvEl) mvEl.textContent = `${result.model_version || "MobileNetV2-v1"}`;
+  if (mvEl) mvEl.textContent = `Model: ${result.model_version || "EfficientNet-B0-v1"}`;
 
   // Top predictions
   const topEl = document.getElementById("top-predictions");
-  if (topEl && result.top_predictions?.length) {
-    topEl.innerHTML = result.top_predictions.map((p, i) => `
+  const topList = result.top_3 || result.top_predictions || [];
+  if (topEl && topList.length) {
+    topEl.innerHTML = topList.map((p, i) => {
+      const name = p.display_name || p.class || p.class_key || "Unknown";
+      const confVal = p.confidence !== undefined ? p.confidence : (p.probability !== undefined ? p.probability : 0);
+      const pctDisplay = (confVal * 100).toFixed(1);
+      return `
       <div class="d-flex align-items-center gap-3 mb-2">
         <div style="font-size:0.78rem;color:var(--text-muted);width:16px;">#${i+1}</div>
-        <div class="truncate" style="flex:1;font-size:0.82rem;">${p.class}</div>
-        <div class="top-pred-bar"><div class="top-pred-fill" style="width:${(p.probability*100).toFixed(1)}%"></div></div>
-        <div style="font-size:0.78rem;font-weight:600;color:var(--primary-light);width:45px;text-align:right;">${(p.probability*100).toFixed(1)}%</div>
-      </div>`).join("");
+        <div class="truncate" style="flex:1;font-size:0.82rem;">${name}</div>
+        <div class="top-pred-bar"><div class="top-pred-fill" style="width:${pctDisplay}%"></div></div>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--primary-light);width:45px;text-align:right;">${pctDisplay}%</div>
+      </div>`;
+    }).join("");
+  } else if (topEl) {
+    topEl.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">No alternative predictions available.</p>';
   }
 
   // Treatments
@@ -238,16 +281,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   const orgEl = document.getElementById("organic-list");
   if (orgEl) {
-    orgEl.innerHTML = (result.organic_alternatives || []).map(o =>
+    const orgs = result.organic_remedies || result.organic_alternatives || [];
+    orgEl.innerHTML = orgs.map(o =>
       `<span class="tech-badge" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#22c55e;">🌿 ${o}</span>`).join("");
-    if (!result.organic_alternatives?.length) orgEl.innerHTML = '<small class="text-muted">No organic alternatives listed.</small>';
+    if (!orgs.length) orgEl.innerHTML = '<small class="text-muted">No organic alternatives listed.</small>';
   }
 
   // Report generation
   document.getElementById("generate-report-btn")?.addEventListener("click", async () => {
     Utils.showLoading("Generating PDF report...");
     try {
-      const res = await AgriCropAPI.reports.generate({ report_type: "disease" });
+      const res = await CropPulseAPI.reports.generate({ report_type: "disease" });
       Utils.hideLoading();
       if (res.file_url) { Utils.showToast("Report ready!", "success"); Utils.downloadURL(res.file_url, `disease_report.pdf`); }
     } catch { Utils.hideLoading(); Utils.showToast("Report generation failed.", "error"); }

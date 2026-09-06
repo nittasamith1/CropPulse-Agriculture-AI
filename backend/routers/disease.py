@@ -1,39 +1,67 @@
 """
-AgriCrop – Disease Detection Router
-POST /api/v1/disease/predict   – Upload leaf image and detect disease
-GET  /api/v1/disease/history   – Get disease prediction history for current user
-GET  /api/v1/disease/{id}      – Get single prediction by ID
+CropPulse – Disease Detection Router
+POST /api/v1/disease/detect   – Upload leaf image and run PyTorch disease detection with Grad-CAM
+POST /api/v1/disease/predict  – Backward-compatible alias
+GET  /api/v1/disease/history  – Paginated disease prediction history for current user
+GET  /api/v1/disease/{id}     – Get single prediction by ID
 """
 
-from datetime import datetime
 from typing import Optional
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
-from loguru import logger
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from backend.config import settings
 from backend.dependencies import get_current_user
-from backend.ai.disease_predictor import disease_predictor
-from backend.ai.recommendation_engine import get_disease_recommendations, get_crop_from_class
-from backend.services.mongodb_service import MongoDBService
-from backend.services.gridfs_service import gridfs_service
-from backend.services.notification_service import notification_service
-from backend.utils.helpers import generate_id, utc_now, severity_from_confidence, marker_color_from_severity
-from backend.utils.validators import validate_image_upload
+from backend.services.disease_service import disease_service
+from backend.repositories.prediction_repository import prediction_repository
+from backend.ai.disease.predictor import ModelNotAvailableError
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
-_disease_svc = MongoDBService(settings.COLLECTION_DISEASE_PREDICTIONS, id_field="prediction_id")
-_user_svc = MongoDBService(settings.COLLECTION_USERS, id_field="uid")
-_farm_svc = MongoDBService(settings.COLLECTION_FARMS, id_field="farm_id")
+
+async def _handle_detection(
+    file: UploadFile,
+    farm_id: Optional[str],
+    crop_type: Optional[str],
+    latitude: Optional[float],
+    longitude: Optional[float],
+    notes: Optional[str],
+    current_user: dict,
+):
+    uid = current_user["uid"]
+    try:
+        result = await disease_service.detect_disease(
+            file=file,
+            user_id=uid,
+            farm_id=farm_id,
+            crop_type=crop_type,
+            latitude=latitude,
+            longitude=longitude,
+            notes=notes,
+        )
+        return {"success": True, **result}
+    except ModelNotAvailableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "MODEL_NOT_AVAILABLE",
+                "message": str(e),
+                "instructions": "Place trained PyTorch weights at the configured DISEASE_MODEL_PATH (.pth).",
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Disease detection failed: {str(e)}",
+        )
 
 
-@router.post("/predict", status_code=status.HTTP_201_CREATED)
+@router.post("/detect", status_code=status.HTTP_201_CREATED)
 @limiter.limit("30/minute")
-async def predict_disease(
+async def detect_disease(
     request: Request,
     file: UploadFile = File(..., description="Crop leaf image (JPG, PNG, WEBP)"),
     farm_id: Optional[str] = Form(default=None),
@@ -44,154 +72,64 @@ async def predict_disease(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Upload a crop leaf image and run disease detection using MobileNetV2.
-    Returns disease name, confidence, severity, treatments, and prevention tips.
+    Upload crop leaf image and detect plant disease using PyTorch EfficientNet-B0.
+    Returns disease classification, confidence, severity, Grad-CAM visual heatmap, and treatments.
     """
-    uid = current_user["uid"]
-
-    # ── Validate image ────────────────────────────────────────────────────────
-    image_bytes = await validate_image_upload(file)
-
-    # ── Upload to MongoDB GridFS ──────────────────────────────────────────────
-    try:
-        # We upload through GridFS
-        image_url = await gridfs_service.upload_leaf_image(
-            content=image_bytes,
-            filename=file.filename or "leaf.jpg",
-            user_id=uid,
-            content_type=file.content_type or "image/jpeg",
-        )
-    except Exception as e:
-        logger.error(f"Image upload failed: {e}")
-        raise HTTPException(status_code=500, detail="Image upload failed. Please try again.")
-
-    # ── Run AI Prediction ─────────────────────────────────────────────────────
-    try:
-        result = disease_predictor.predict(image_bytes=image_bytes, crop_hint=crop_type)
-    except Exception as e:
-        logger.error(f"Disease prediction failed: {e}")
-        raise HTTPException(status_code=500, detail="Prediction failed. Please try again.")
-
-    # ── Get Recommendations ───────────────────────────────────────────────────
-    recommendations = get_disease_recommendations(
-        disease_class_key=result["disease_class_key"],
-        is_healthy=result["is_healthy"],
+    return await _handle_detection(
+        file=file,
+        farm_id=farm_id,
+        crop_type=crop_type,
+        latitude=latitude,
+        longitude=longitude,
+        notes=notes,
+        current_user=current_user,
     )
 
-    # ── Infer crop from class if not provided ─────────────────────────────────
-    detected_crop = crop_type or get_crop_from_class(result["disease_class_key"])
 
-    # ── Get farm location if farm_id provided ─────────────────────────────────
-    farm_lat, farm_lon, district, state = latitude, longitude, None, None
-    if farm_id:
-        farm_doc = await _farm_svc.get(farm_id)
-        if farm_doc and farm_doc.get("user_id") == uid:
-            farm_lat = farm_lat or farm_doc.get("latitude")
-            farm_lon = farm_lon or farm_doc.get("longitude")
-            district = farm_doc.get("district")
-            state = farm_doc.get("state")
-
-    # ── Build Prediction Record ───────────────────────────────────────────────
-    prediction_id = generate_id("dpred")
-    now = utc_now()
-    severity = result["severity"]
-    confidence = result["confidence"]
-
-    prediction_doc = {
-        "prediction_id": prediction_id,
-        "user_id": uid,
-        "farm_id": farm_id,
-        "image_url": image_url,
-        "disease_name": result["disease_name"],
-        "disease_class_key": result["disease_class_key"],
-        "confidence": confidence,
-        "severity": severity,
-        "affected_area_percent": result["affected_area_percent"],
-        "crop_type": detected_crop,
-        "is_healthy": result["is_healthy"],
-        "treatments": recommendations["treatments"],
-        "prevention_tips": recommendations["prevention"],
-        "recommended_pesticides": recommendations["pesticides"],
-        "organic_alternatives": recommendations.get("organic", []),
-        "top_predictions": result["top_predictions"],
-        "latitude": farm_lat,
-        "longitude": farm_lon,
-        "district": district,
-        "state": state,
-        "notes": notes,
-        "marker_color": marker_color_from_severity(severity),
-        "stub_mode": result.get("stub_mode", True),
-        "model_version": result["model_version"],
-        "created_at": now,
-    }
-
-    await _disease_svc.create(prediction_id, prediction_doc)
-
-    # Increment user total_predictions counter
-    total = current_user.get("total_predictions", 0) + 1
-    await _user_svc.update(uid, {"total_predictions": total, "updated_at": now})
-
-    # Update farm statistics if applicable
-    if farm_id:
-        await _farm_svc.update(farm_id, {
-            "total_predictions": farm_doc.get("total_predictions", 0) + 1,
-            "last_prediction_at": now,
-            "updated_at": now
-        })
-
-    # ── Send Notification ─────────────────────────────────────────────────────
-    if not result["is_healthy"]:
-        await notification_service.disease_alert(
-            user_id=uid,
-            disease_name=result["disease_name"],
-            severity=severity,
-            prediction_id=prediction_id,
-        )
-
-    logger.info(
-        f"Disease prediction: uid={uid} | {result['disease_name']} "
-        f"({confidence:.1%}) | severity={severity} | pred_id={prediction_id}"
+@router.post("/predict", status_code=status.HTTP_201_CREATED)
+@limiter.limit("30/minute")
+async def predict_disease_alias(
+    request: Request,
+    file: UploadFile = File(..., description="Crop leaf image (JPG, PNG, WEBP)"),
+    farm_id: Optional[str] = Form(default=None),
+    crop_type: Optional[str] = Form(default=None),
+    latitude: Optional[float] = Form(default=None),
+    longitude: Optional[float] = Form(default=None),
+    notes: Optional[str] = Form(default=None),
+    current_user: dict = Depends(get_current_user),
+):
+    """Backward-compatible alias for /detect."""
+    return await _handle_detection(
+        file=file,
+        farm_id=farm_id,
+        crop_type=crop_type,
+        latitude=latitude,
+        longitude=longitude,
+        notes=notes,
+        current_user=current_user,
     )
-
-    return {
-        "success": True,
-        "prediction_id": prediction_id,
-        "disease_name": result["disease_name"],
-        "confidence": confidence,
-        "confidence_percent": f"{confidence * 100:.1f}%",
-        "severity": severity,
-        "affected_area_percent": result["affected_area_percent"],
-        "is_healthy": result["is_healthy"],
-        "crop_type": detected_crop,
-        "image_url": image_url,
-        "treatments": recommendations["treatments"],
-        "prevention_tips": recommendations["prevention"],
-        "recommended_pesticides": recommendations["pesticides"],
-        "organic_alternatives": recommendations.get("organic", []),
-        "top_predictions": result["top_predictions"],
-        "image_quality": result.get("image_quality", {}),
-        "stub_mode": result.get("stub_mode", True),
-        "model_version": result["model_version"],
-        "created_at": now.isoformat(),
-    }
 
 
 @router.get("/history")
 async def get_disease_history(
     page: int = 1,
     page_size: int = 20,
+    farm_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
 ):
     """Return paginated disease prediction history for the current user."""
     uid = current_user["uid"]
-    all_preds = await _disease_svc.query(
-        "user_id", "==", uid,
-        order_by="created_at", descending=True, limit=200,
+    preds, total = await prediction_repository.list_disease_predictions_paginated(
+        user_id=uid, farm_id=farm_id, page=page, page_size=page_size
     )
-    total = len(all_preds)
-    start = (page - 1) * page_size
-    preds = all_preds[start: start + page_size]
-    return {"total": total, "page": page, "page_size": page_size, "predictions": preds}
+    total_pages = (total + page_size - 1) // max(1, page_size)
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "predictions": preds,
+    }
 
 
 @router.get("/{prediction_id}")
@@ -199,8 +137,8 @@ async def get_disease_prediction(
     prediction_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Fetch a single disease prediction by ID."""
-    doc = await _disease_svc.get(prediction_id)
+    """Fetch single disease prediction by ID."""
+    doc = await prediction_repository.get_disease_prediction(prediction_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Prediction not found.")
     if doc.get("user_id") != current_user["uid"] and current_user.get("role") != "admin":

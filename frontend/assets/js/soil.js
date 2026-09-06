@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Soil Prediction Page JS
+﻿/**
+ * CropPulse – Soil Prediction Page JS
  * Handles soil form submission, result display, and chart rendering.
  */
 
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadFarms() {
   try {
-    const res = await AgriCropAPI.auth.getMyFarms();
+    const res = await CropPulseAPI.auth.getMyFarms();
     const sel = document.getElementById("farm-select");
     if (!sel) return;
     sel.innerHTML = '<option value="">No specific farm</option>';
@@ -68,7 +68,7 @@ async function handleSubmit(e) {
 
   try {
     Utils.showLoading("Analyzing soil conditions...");
-    const result = await AgriCropAPI.soil.predict(payload);
+    const result = await CropPulseAPI.soil.predict(payload);
     Utils.hideLoading();
     sessionStorage.setItem("ag_soil_result", JSON.stringify(result));
     displayResults(result);
@@ -175,7 +175,7 @@ function renderSoilChart(result) {
 async function generateReport(predId) {
   try {
     Utils.showLoading("Generating PDF report...");
-    const res = await AgriCropAPI.reports.generate({ report_type: "soil" });
+    const res = await CropPulseAPI.reports.generate({ report_type: "soil" });
     Utils.hideLoading();
     if (res.file_url) {
       Utils.showToast("Report ready! Downloading...", "success");

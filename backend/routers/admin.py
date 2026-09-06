@@ -1,7 +1,6 @@
 """
-AgriCrop – Admin Router
+CropPulse – Admin Router
 Protected endpoints for platform administrators. Handles user moderation, platform-wide analytics, and logs.
-Replaces Firebase completely with MongoDB.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

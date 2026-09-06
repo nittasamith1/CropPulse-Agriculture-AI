@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Upload Leaf Image – AgriCrop</title>
+  <title>Upload Leaf Image – CropPulse</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -12,7 +12,7 @@
 <!-- Navbar -->
 <nav class="ag-navbar"><div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
   <button class="d-lg-none btn-ag-icon" id="sidebar-toggle">☰</button>
-  <a href="/" class="brand">🌱 AgriCrop</a>
+  <a href="/" class="brand">🌱 CropPulse</a>
   <div class="ms-auto d-flex gap-2 align-items-center">
     <button id="theme-toggle"><span class="toggle-icon sun-icon">☀️</span><span class="toggle-icon moon-icon">🌙</span></button>
     <a href="notifications.html" class="nav-icon-btn position-relative">🔔<span id="notif-badge" class="badge-notif hidden">0</span></a>
@@ -22,20 +22,27 @@
 
 <!-- Sidebar -->
 <aside class="ag-sidebar" id="sidebar">
+  <div class="sidebar-section-label">Main</div>
   <a href="dashboard.html" class="sidebar-link"><span class="link-icon">🏠</span> Dashboard</a>
   <a href="upload.html" class="sidebar-link active"><span class="link-icon">🌿</span> Upload Leaf</a>
   <a href="soil-prediction.html" class="sidebar-link"><span class="link-icon">💧</span> Soil Prediction</a>
+  <a href="weather.html" class="sidebar-link"><span class="link-icon">🌦️</span> Weather</a>
+  <a href="risk.html" class="sidebar-link"><span class="link-icon">⚠️</span> Risk Assessment</a>
+  <a href="irrigation.html" class="sidebar-link"><span class="link-icon">🚜</span> Irrigation</a>
   <a href="map.html" class="sidebar-link"><span class="link-icon">🗺️</span> Disease Map</a>
+  <div class="sidebar-section-label">Records</div>
   <a href="history.html" class="sidebar-link"><span class="link-icon">📋</span> History</a>
-  <a href="notifications.html" class="sidebar-link"><span class="link-icon">🔔</span> Notifications</a>
+  <a href="notifications.html" class="sidebar-link"><span class="link-icon">🔔</span> Notifications <span class="link-badge hidden" id="sidebar-notif-badge">0</span></a>
+  <div class="sidebar-section-label">Account</div>
   <a href="profile.html" class="sidebar-link"><span class="link-icon">👤</span> Profile</a>
+  <a href="#" class="sidebar-link" onclick="Auth.logout()"><span class="link-icon">🚪</span> Logout</a>
 </aside>
 
 <main class="ag-content-area ag-page">
   <div class="section-header mb-4">
     <div>
       <h2 class="section-title">🌿 Leaf Disease Detection</h2>
-      <p class="section-subtitle">Upload a clear photo of a crop leaf to detect diseases using MobileNetV2 AI</p>
+      <p class="section-subtitle">Upload a clear photo of a crop leaf to detect diseases using EfficientNet-B0 AI with Grad-CAM explainability</p>
     </div>
   </div>
 

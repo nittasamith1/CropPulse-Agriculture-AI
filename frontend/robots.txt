@@ -1,4 +1,4 @@
-User-agent: *
+﻿User-agent: *
 Allow: /
 
-Sitemap: https://agricrop-a8352.web.app/sitemap.xml
+Sitemap: https://CropPulse-a8352.web.app/sitemap.xml

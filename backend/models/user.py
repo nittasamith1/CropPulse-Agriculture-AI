@@ -1,10 +1,10 @@
 """
-AgriCrop – User Models and Pydantic Schemas
+CropPulse – User Models and Pydantic Schemas
 Defines request/response models for JWT authentication, profile, and farm management.
 """
 
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
 
 
@@ -20,8 +20,8 @@ class UserRegisterRequest(BaseModel):
     state: Optional[str] = None
     district: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "email": "farmer@example.com",
                 "password": "SecurePass123",
@@ -32,6 +32,7 @@ class UserRegisterRequest(BaseModel):
                 "district": "Bangalore",
             }
         }
+    )
 
 
 class LoginRequest(BaseModel):
@@ -105,8 +106,8 @@ class UserProfileResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "uid": "user123",
                 "email": "farmer@example.com",
@@ -124,18 +125,20 @@ class UserProfileResponse(BaseModel):
                 "updated_at": "2025-06-26T15:45:00Z",
             }
         }
+    )
 
 
 class MessageResponse(BaseModel):
     """Generic message response."""
     message: str
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "message": "Operation completed successfully."
             }
         }
+    )
 
 
 class DiseaseResultResponse(BaseModel):

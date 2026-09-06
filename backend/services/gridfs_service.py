@@ -1,7 +1,6 @@
 """
-AgriCrop – GridFS Storage Service
+CropPulse – GridFS Storage Service
 Handles storage of leaf images, PDFs, and general assets in MongoDB GridFS.
-Replaces Firebase Storage completely.
 """
 
 import uuid

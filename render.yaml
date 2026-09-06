@@ -1,9 +1,9 @@
-# AgriCrop – Render Deployment Configuration
+# CropPulse – Render Deployment Configuration
 # https://render.com/docs/render-yaml
 
 services:
   - type: web
-    name: agricrop-backend
+    name: CropPulse-backend
     env: python
     region: oregon
     plan: free
@@ -18,7 +18,7 @@ services:
       - key: MONGODB_URI
         sync: false  # Set in Render dashboard
       - key: MONGODB_DB_NAME
-        value: agricrop
+        value: croppulse
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
@@ -30,6 +30,6 @@ services:
       - key: EMAIL_ENABLED
         value: false
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://agri-crop-ten.vercel.app,https://croppulse.vercel.app"
       - key: LOG_LEVEL
         value: INFO

@@ -1,5 +1,5 @@
-"""
-AgriCrop – Authentication Service
+﻿"""
+CropPulse – Authentication Service
 Handles JWT tokens (Access and Refresh), password hashing (bcrypt), and verification.
 """
 

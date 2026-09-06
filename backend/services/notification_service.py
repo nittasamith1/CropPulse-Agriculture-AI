@@ -1,7 +1,6 @@
 """
-AgriCrop – Notification Service
+CropPulse – Notification Service
 Handles user notifications for disease alerts, updates, and system messages asynchronously.
-Replaces Firestore completely with MongoDB.
 """
 
 from datetime import datetime

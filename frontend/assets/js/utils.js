@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Utility Module
+﻿/**
+ * CropPulse – Utility Module
  * Toast notifications, loading overlays, formatters, and shared helpers.
  */
 

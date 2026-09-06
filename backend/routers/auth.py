@@ -1,7 +1,6 @@
 """
-AgriCrop – Auth Router
+CropPulse – Auth Router
 Handles JWT user registration, login, token refresh, logout, password reset, email verification, and profile/farm CRUD.
-Replaces Firebase completely with MongoDB + JWT authentication.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -95,7 +94,7 @@ async def register(request: Request, payload: UserRegisterRequest):
         # Welcome notification
         await notification_service.system_notification(
             user_id=uid,
-            title="🌱 Welcome to AgriCrop!",
+            title="🌱 Welcome to CropPulse!",
             message="Your account has been created successfully. Verify your email to complete registration.",
         )
 

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AgriCrop – AI-Powered Precision Agriculture Intelligence</title>
-  <meta name="description" content="AgriCrop: Detect plant diseases, predict soil moisture, and get AI-driven irrigation recommendations with geospatial crop health monitoring."/>
+  <title>CropPulse – AI-Powered Precision Agriculture Intelligence</title>
+  <meta name="description" content="CropPulse: Detect plant diseases, predict soil moisture, and get AI-driven irrigation recommendations with geospatial crop health monitoring."/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -37,7 +37,7 @@
 <!-- Navbar -->
 <nav class="ag-navbar">
   <div class="ag-container d-flex align-items-center w-100 gap-4">
-    <a href="/" class="brand me-4">🌱 AgriCrop</a>
+    <a href="/" class="brand me-4">🌱 CropPulse</a>
     <div class="d-none d-lg-flex gap-1 flex-grow-1">
       <a href="#features" class="nav-link">Features</a>
       <a href="#how-it-works" class="nav-link">How It Works</a>
@@ -90,8 +90,8 @@
               <div class="hero-stat-lbl">Disease Classes</div>
             </div>
             <div>
-              <div class="hero-stat-val">95%+</div>
-              <div class="hero-stat-lbl">Model Accuracy</div>
+              <div class="hero-stat-val">PyTorch</div>
+              <div class="hero-stat-lbl">Deep Learning</div>
             </div>
             <div>
               <div class="hero-stat-val">Real-time</div>
@@ -164,14 +164,14 @@
         <div class="feature-card h-100">
           <div class="feature-icon">🌿</div>
           <div class="feature-title">Disease Detection</div>
-          <p class="text-muted" style="font-size:0.88rem;">MobileNetV2 CNN identifies 38 plant diseases from a single leaf photo with 95%+ accuracy.</p>
+          <p class="text-muted" style="font-size:0.88rem;">PyTorch EfficientNet-B0 deep learning identifies 38 plant diseases from a leaf photo with Grad-CAM visual heatmaps.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4 anim-hidden animate-fade-up delay-200">
         <div class="feature-card h-100">
           <div class="feature-icon">💧</div>
           <div class="feature-title">Soil Moisture AI</div>
-          <p class="text-muted" style="font-size:0.88rem;">Dense Neural Network predicts soil moisture from temperature, humidity, rainfall and soil type.</p>
+          <p class="text-muted" style="font-size:0.88rem;">Trained XGBoost regression pipeline predicts soil moisture dynamics from ambient temperature, humidity, rainfall, and soil type.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4 anim-hidden animate-fade-up delay-300">
@@ -222,7 +222,7 @@
       <div class="col-md-6 col-lg-3 text-center anim-hidden animate-fade-up delay-200">
         <div style="width:60px;height:60px;background:var(--grad-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1rem;">🤖</div>
         <h5 style="color:var(--text-primary);">2. AI Analysis</h5>
-        <p class="text-muted" style="font-size:0.85rem;">MobileNetV2 processes the image and identifies diseases.</p>
+        <p class="text-muted" style="font-size:0.85rem;">EfficientNet-B0 processes the image, identifies diseases, and renders Grad-CAM heatmaps.</p>
       </div>
       <div class="col-md-6 col-lg-3 text-center anim-hidden animate-fade-up delay-300">
         <div style="width:60px;height:60px;background:var(--grad-amber);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1rem;">💊</div>
@@ -247,10 +247,10 @@
     </div>
     <div class="d-flex flex-wrap gap-2 justify-content-center">
       <span class="tech-badge">🐍 Python</span><span class="tech-badge">⚡ FastAPI</span>
-      <span class="tech-badge">🧠 TensorFlow</span><span class="tech-badge">📱 MobileNetV2</span>
-      <span class="tech-badge">🍃 MongoDB Atlas</span><span class="tech-badge">🗺️ Leaflet.js</span>
-      <span class="tech-badge">📊 Chart.js</span><span class="tech-badge">🐳 Docker</span>
-      <span class="tech-badge">🌐 Bootstrap 5</span><span class="tech-badge">☁️ Render</span>
+      <span class="tech-badge">🔥 PyTorch</span><span class="tech-badge">🧠 EfficientNet-B0</span>
+      <span class="tech-badge">📈 XGBoost</span><span class="tech-badge">🍃 MongoDB Atlas</span>
+      <span class="tech-badge">🗺️ Leaflet.js</span><span class="tech-badge">📊 Chart.js</span>
+      <span class="tech-badge">🐳 Docker</span><span class="tech-badge">🌐 Open-Meteo</span>
       <span class="tech-badge">🔒 JWT Auth</span><span class="tech-badge">📦 GridFS</span>
     </div>
   </div>
@@ -260,7 +260,7 @@
 <section class="py-5" style="background:linear-gradient(135deg,rgba(22,163,74,0.1),rgba(37,99,235,0.08));">
   <div class="ag-container py-4 text-center">
     <h2 class="text-gradient mb-3">Ready to Transform Your Farm?</h2>
-    <p class="text-muted mb-4">Join AgriCrop and protect your crops with the power of AI.</p>
+    <p class="text-muted mb-4">Join CropPulse and protect your crops with the power of AI.</p>
     <a href="pages/register.html" class="btn-ag-primary" style="font-size:1rem;padding:0.9rem 2.5rem;">
       🌱 Create Free Account
     </a>
@@ -270,7 +270,7 @@
 <!-- Footer -->
 <footer class="py-4">
   <div class="ag-container text-center">
-    <div class="text-gradient fw-semibold mb-1">🌱 AgriCrop</div>
+    <div class="text-gradient fw-semibold mb-1">🌱 CropPulse</div>
     <small class="text-muted">AI-Powered Precision Agriculture · B.Tech AIML Final Year Project · © 2026</small>
   </div>
 </footer>

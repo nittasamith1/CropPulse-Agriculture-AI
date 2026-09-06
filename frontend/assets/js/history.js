@@ -1,5 +1,5 @@
-/**
- * AgriCrop – History Page JS
+﻿/**
+ * CropPulse – History Page JS
  * Displays paginated disease + soil prediction history with filters.
  */
 
@@ -40,7 +40,7 @@ async function loadHistory() {
   Utils.showSkeleton("history-container", 5, "80px");
 
   try {
-    const data = await AgriCropAPI.history.getCombined(currentPage, PAGE_SIZE, currentType);
+    const data = await CropPulseAPI.history.getCombined(currentPage, PAGE_SIZE, currentType);
     renderHistory(data);
   } catch (e) {
     container.innerHTML = `<div class="text-center py-5 text-muted">Failed to load history. <button onclick="loadHistory()" class="btn-ag-secondary ms-2">Retry</button></div>`;
@@ -167,7 +167,7 @@ function filterRows(term) {
 // Export CSV
 document.getElementById("export-csv-btn")?.addEventListener("click", async () => {
   try {
-    const data = await AgriCropAPI.history.getCombined(1, 500, "all");
+    const data = await CropPulseAPI.history.getCombined(1, 500, "all");
     const rows = [["Type","Result","Severity/Status","Value","Date"]];
     (data.disease_predictions || []).forEach(p => {
       rows.push(["Disease", p.disease_name, p.severity, `${(p.confidence*100).toFixed(1)}%`, p.created_at]);
@@ -177,7 +177,7 @@ document.getElementById("export-csv-btn")?.addEventListener("click", async () =>
     });
     const csv = rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    Utils.downloadURL(URL.createObjectURL(blob), `agricrop_history_${Date.now()}.csv`);
+    Utils.downloadURL(URL.createObjectURL(blob), `CropPulse_history_${Date.now()}.csv`);
     Utils.showToast("CSV exported!", "success");
   } catch { Utils.showToast("Export failed.", "error"); }
 });

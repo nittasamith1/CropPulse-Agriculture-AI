@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Leaflet.js Map Module
+﻿/**
+ * CropPulse – Leaflet.js Map Module
  * GIS map with farm markers, disease heatmap, marker clustering,
  * color-coded severity, and search/filter functionality.
  */

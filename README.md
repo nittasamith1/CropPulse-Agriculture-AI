@@ -1,8 +1,9 @@
-# 🌱 AgriCrop — AI-Powered Smart Agriculture Platform
+# 🌿 CropPulse — AI-Powered Crop Intelligence Platform
 
-> **Production-ready** enterprise AI application for crop disease detection, soil moisture prediction, GIS farm monitoring, and precision irrigation recommendations.
+> **Production-ready** enterprise AI application for crop disease detection, soil moisture prediction, weather intelligence, multi-factor risk assessment, and precision irrigation recommendations.
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?logo=pytorch)](https://pytorch.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-7.0-47A248?logo=mongodb)](https://www.mongodb.com/atlas)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org)
 
@@ -12,8 +13,11 @@
 
 | Feature | Description |
 |---|---|
-| 🦠 **Disease Detection** | MobileNetV2 AI model for leaf disease diagnosis (38 classes) |
-| 💧 **Soil Prediction** | DenseNN predicts moisture % from env inputs |
+| 🦠 **Disease Detection** | EfficientNet-B0 (PyTorch) + Grad-CAM for leaf disease diagnosis (38 classes) |
+| 💧 **Soil Prediction** | XGBoost/Random Forest regressor predicts moisture % from env inputs |
+| 🌦️ **Weather Intelligence** | Open-Meteo integration — real-time conditions + 7-day forecast with caching |
+| ⚠️ **Risk Assessment** | Multi-factor crop risk engine (disease + weather + soil + season) |
+| 🚿 **Precision Irrigation** | AI-powered water scheduling with drip/sprinkler/flood recommendations |
 | 🗺️ **GIS Monitoring** | Leaflet.js interactive map with severity markers |
 | 📊 **Analytics Dashboard** | Chart.js visualisations of farm health trends |
 | 📄 **PDF Reports** | Auto-generated disease/soil/combined farm reports |
@@ -27,7 +31,7 @@
 ## 🏗️ Architecture
 
 ```
-AgriCrop/
+CropPulse/
 ├── backend/                    # FastAPI Python Backend
 │   ├── main.py                 # App entry point, middleware, routers
 │   ├── config.py               # Pydantic settings (env vars)
@@ -51,9 +55,15 @@ AgriCrop/
 │   │   ├── notification_service.py
 │   │   └── report_service.py
 │   ├── ai/
-│   │   ├── disease_predictor.py   # TF/Keras MobileNetV2 inference
-│   │   ├── soil_predictor.py      # DenseNN soil moisture
-│   │   └── recommendation_engine.py  # Irrigation recommendations
+│   │   ├── disease/            # PyTorch EfficientNet-B0 pipeline
+│   │   │   ├── model_manager.py   # Thread-safe singleton loader
+│   │   │   ├── predictor.py       # Inference + Grad-CAM
+│   │   │   └── preprocessing.py   # Image transforms
+│   │   ├── soil/               # XGBoost / sklearn soil pipeline
+│   │   │   ├── model_manager.py   # Thread-safe singleton loader
+│   │   │   └── predictor.py       # Physics-informed fallback
+│   │   └── intelligence/
+│   │       └── recommendation_engine.py  # Agronomic knowledge base
 │   ├── models/                 # Pydantic schemas
 │   └── utils/                  # helpers, validators
 ├── frontend/                   # Vanilla JS / Bootstrap 5 SPA
@@ -64,8 +74,12 @@ AgriCrop/
 │       └── js/
 │           ├── auth.js         # JWT session management (auto-refresh)
 │           └── api.js          # Axios-like fetch wrapper with 401 retry
-├── ai_models/saved_models/     # .h5 / .keras model files (gitignored)
+├── ai_models/                  # Model weights (gitignored)
+│   ├── disease_model/          # Place trained disease_model.pth here
+│   └── soil_model/             # Place trained soil_model.pkl here
 ├── datasets/                   # Training data (gitignored)
+├── tests/                      # pytest test suite
+├── docs/                       # Project documentation
 ├── docker-compose.yml          # Local dev with mongo container
 ├── Dockerfile.backend          # Multi-stage production build
 ├── render.yaml                 # One-click Render deploy
@@ -82,8 +96,8 @@ AgriCrop/
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/youruser/agricrop.git
-cd agricrop
+git clone https://github.com/youruser/croppulse.git
+cd croppulse
 pip install -r requirements.txt
 ```
 
@@ -108,19 +122,16 @@ python -m http.server 8080 --directory frontend
 
 Then visit `http://localhost:8080`
 
-### 3. Training AI Models Locally
+### 5. Training AI Models Locally
 
 If you wish to retrain the models with your own data:
 
 ```bash
-# Generate synthetic soil data (optional)
-python3 -c "import pandas as pd; ..." # see scripts
-
 # Train Soil model
 python3 -m ai_models.soil_model.train_soil_model
 
-# Train Disease model (requires PlantVillage dataset)
-python3 -m ai_models.disease_model.train_disease_model
+# Train Disease model (PyTorch EfficientNet-B0)
+python3 -m ai_models.disease_model.train
 ```
 
 ---
@@ -136,7 +147,7 @@ python3 -m ai_models.disease_model.train_disease_model
 ### Frontend → Vercel
 1. Import the repo on [vercel.com](https://vercel.com)
 2. Set **Root Directory** to `frontend/`
-3. Update `vercel.json` → replace `agricrop-backend.onrender.com` with your Render URL
+3. Update `vercel.json` → replace `croppulse-backend.onrender.com` with your Render URL
 4. Deploy
 
 ### Docker (Self-hosted)
@@ -171,13 +182,15 @@ Interactive docs available at: `http://localhost:8000/api/docs`
 
 | Model | Architecture | Classes | Status |
 |---|---|---|---|
-| Disease Detection | MobileNetV2 (TF/Keras) | 38 crop diseases | Stub mode until `.h5` placed in `ai_models/saved_models/` |
-| Soil Moisture | DenseNN (sklearn) | Regression | Stub mode until `.pkl` placed in `ai_models/saved_models/` |
+| Disease Detection | **PyTorch** | EfficientNet-B0 + Grad-CAM | 38 crop diseases | Stub mode until `disease_model.pth` placed in `ai_models/disease_model/` |
+| Soil Moisture | **XGBoost / scikit-learn** | Gradient Boosted Regressor | Regression | Physics-informed stub until `soil_model.pkl` placed in `ai_models/soil_model/` |
+
+> ⚠️ **When model weights are absent**, the platform clearly indicates **"AI MODEL UNAVAILABLE"** and never fabricates predictions.
 
 Place trained model files at:
 ```
-ai_models/saved_models/disease_model.h5
-ai_models/saved_models/soil_model.pkl
+ai_models/disease_model/disease_model.pth
+ai_models/soil_model/soil_model.pkl
 ```
 
 ---
@@ -187,7 +200,7 @@ ai_models/saved_models/soil_model.pkl
 | Variable | Required | Description |
 |---|---|---|
 | `MONGODB_URI` | ✅ | MongoDB Atlas connection string |
-| `MONGODB_DB_NAME` | ✅ | Database name (default: `agricrop`) |
+| `MONGODB_DB_NAME` | ✅ | Database name (default: `croppulse`) |
 | `SECRET_KEY` | ✅ | JWT signing secret (32+ chars) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | — | Default: `60` |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | — | Default: `30` |
@@ -207,5 +220,5 @@ ai_models/saved_models/soil_model.pkl
 - JWT **access tokens** (60 min) + **refresh tokens** (30 days)
 - Rate limiting via **slowapi** on all mutation endpoints
 - CORS restricted to configured origins in production
-- `.env` and `serviceAccountKey.json` excluded from git
-
+- `.env` excluded from git
+- Self-contained PyTorch EfficientNet-B0 + MongoDB Atlas architecture

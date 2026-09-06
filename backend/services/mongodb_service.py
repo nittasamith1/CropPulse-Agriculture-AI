@@ -1,7 +1,6 @@
 """
-AgriCrop – MongoDB Async Service
+CropPulse – MongoDB Async Service
 Exposes typed wrapper methods for MongoDB collection operations.
-Replaces FirestoreService with async Motor equivalents.
 """
 
 from typing import Any, Dict, List, Optional

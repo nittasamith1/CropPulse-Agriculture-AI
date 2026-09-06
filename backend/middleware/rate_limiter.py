@@ -1,5 +1,5 @@
-"""
-AgriCrop – Rate Limiter Configuration
+﻿"""
+CropPulse – Rate Limiter Configuration
 Uses slowapi (Starlette-compatible) with per-route and global limits.
 """
 

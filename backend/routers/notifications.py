@@ -1,5 +1,5 @@
-"""
-AgriCrop – Notifications Router
+﻿"""
+CropPulse – Notifications Router
 GET  /api/v1/notifications/          – List user notifications
 POST /api/v1/notifications/{id}/read – Mark single notification as read
 POST /api/v1/notifications/read-all  – Mark all as read

@@ -3,7 +3,7 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Install system dependencies for TensorFlow + OpenCV
+# Install system dependencies for PyTorch + OpenCV
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ git libglib2.0-0 libsm6 libxext6 libxrender-dev \
     libgomp1 && \
@@ -33,7 +33,7 @@ COPY ai_models/ ./ai_models/
 COPY datasets/ ./datasets/
 
 # Create runtime directories
-RUN mkdir -p logs tmp/agricrop_uploads
+RUN mkdir -p logs tmp/CropPulse_uploads
 
 # Environment defaults
 ENV APP_ENV=production \

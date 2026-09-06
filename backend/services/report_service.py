@@ -1,7 +1,6 @@
 """
-AgriCrop – Report Generation Service
+CropPulse – Report Generation Service
 Generates PDF and CSV reports of predictions and analytics.
-Replaces Firebase Storage & Firestore with MongoDB GridFS & Motor.
 """
 
 import asyncio
@@ -266,7 +265,7 @@ class ReportService:
             spaceAfter=20,
             alignment=1,  # Center
         )
-        story.append(Paragraph("🌾 AgriCrop Disease Report", title_style))
+        story.append(Paragraph("🌾 CropPulse Disease Report", title_style))
         story.append(Spacer(1, 0.2 * inch))
 
         # Metadata
@@ -324,7 +323,7 @@ class ReportService:
             spaceAfter=20,
             alignment=1,  # Center
         )
-        story.append(Paragraph("💧 AgriCrop Soil Moisture Report", title_style))
+        story.append(Paragraph("💧 CropPulse Soil Moisture Report", title_style))
         story.append(Spacer(1, 0.2 * inch))
 
         meta_style = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=10, textColor=colors.HexColor("#555555"))
@@ -383,7 +382,7 @@ class ReportService:
             spaceAfter=20,
             alignment=1,  # Center
         )
-        story.append(Paragraph("🌿 AgriCrop Combined Health Report", title_style))
+        story.append(Paragraph("🌿 CropPulse Combined Health Report", title_style))
         story.append(Spacer(1, 0.2 * inch))
 
         meta_style = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=10, textColor=colors.HexColor("#555555"))

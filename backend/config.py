@@ -1,8 +1,9 @@
 """
-AgriCrop – Application Configuration
+CropPulse – AI-Powered Crop Intelligence Platform
+Application Configuration.
 Loads all settings from environment variables (.env file).
 Uses pydantic-settings for type-safe config management.
-Firebase completely removed. MongoDB Atlas + JWT + SMTP only.
+MongoDB Atlas + PyTorch + Open-Meteo + JWT.
 """
 
 import os
@@ -18,7 +19,7 @@ class Settings(BaseSettings):
     """
 
     # ── Application ──────────────────────────────────────────
-    APP_NAME: str = "AgriCrop"
+    APP_NAME: str = "CropPulse"
     APP_ENV: str = "development"
     APP_PORT: int = 8000
     FRONTEND_URL: str = "http://localhost:8080"
@@ -30,18 +31,19 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # ── MongoDB Atlas ─────────────────────────────────────────
-    MONGODB_URI: str = os.getenv(
-    "MONGODB_URI",
-    "mongodb+srv://db_user:3gWRpw4tTssyTR8Z@cluster0.xdax7ct.mongodb.net/?appName=Cluster0"
-    )
-    MONGODB_DB_NAME: str = "agricrop"
+    MONGODB_URI: str = "mongodb://localhost:27017"
+    MONGODB_DB_NAME: str = "croppulse"
 
     # ── MongoDB Collection Names ──────────────────────────────
     COLLECTION_USERS: str = "users"
     COLLECTION_FARMS: str = "farms"
+    COLLECTION_FIELDS: str = "fields"
     COLLECTION_DISEASE_PREDICTIONS: str = "disease_predictions"
     COLLECTION_SOIL_PREDICTIONS: str = "soil_predictions"
     COLLECTION_PREDICTIONS: str = "predictions"
+    COLLECTION_WEATHER_OBSERVATIONS: str = "weather_observations"
+    COLLECTION_RISK_ASSESSMENTS: str = "risk_assessments"
+    COLLECTION_IRRIGATION_RECOMMENDATIONS: str = "irrigation_recommendations"
     COLLECTION_NOTIFICATIONS: str = "notifications"
     COLLECTION_REPORTS: str = "reports"
     COLLECTION_ANALYTICS: str = "analytics"
@@ -56,36 +58,37 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    FROM_EMAIL: str = "noreply@agricrop.app"
-    FROM_NAME: str = "AgriCrop"
-    EMAIL_ENABLED: bool = False  # Set True in production with valid SMTP creds
+    FROM_EMAIL: str = "noreply@croppulse.app"
+    FROM_NAME: str = "CropPulse"
+    EMAIL_ENABLED: bool = False
 
-    # ── AI Model Paths ────────────────────────────────────────
-    DISEASE_MODEL_PATH: str = "./ai_models/saved_models/disease_model.h5"
-    SOIL_MODEL_PATH: str = "./ai_models/saved_models/soil_model.h5"
+    # ── AI Model Configurations ───────────────────────────────
+    # PyTorch EfficientNet-B0 Disease Model (.pth)
+    DISEASE_MODEL_PATH: str = "./ai_models/disease_model/disease_model.pth"
+    # XGBoost / Scikit-Learn Tabular Soil Model (.pkl)
+    SOIL_MODEL_PATH: str = "./ai_models/soil_model/soil_model.pkl"
     DISEASE_CLASSES_PATH: str = "./datasets/disease/disease_labels.csv"
     MODEL_CONFIDENCE_THRESHOLD: float = 0.65
+
+    # ── Weather Intelligence (Open-Meteo) ─────────────────────
+    OPEN_METEO_BASE_URL: str = "https://api.open-meteo.com/v1"
+    WEATHER_CACHE_TTL_SECONDS: int = 1800  # 30-minute cache TTL
 
     # ── CORS ──────────────────────────────────────────────────
     ALLOWED_ORIGINS: str = (
         "http://localhost:3000,http://localhost:8000,http://localhost:8080,"
         "http://127.0.0.1:3000,http://127.0.0.1:8000,http://127.0.0.1:8080,"
-        "https://agricrop.vercel.app"
+        "https://croppulse.vercel.app"
     )
 
     @property
     def cors_origins(self) -> List[str]:
-        """Parse comma-separated ALLOWED_ORIGINS into a list.
-        NOTE: Do NOT include '*' when allow_credentials=True (FastAPI restriction).
-        If '*' is set (e.g. from Render env var), expand it to known safe origins.
-        """
         raw = self.ALLOWED_ORIGINS.strip()
-        # If wildcard is set, fall back to permissive but valid origins list
         if raw == "*":
             return [
                 "http://localhost:3000", "http://localhost:8000", "http://localhost:8080",
                 "http://127.0.0.1:8080",
-                "https://agricrop.vercel.app",
+                "https://croppulse.vercel.app",
             ]
         origins = [o.strip() for o in raw.split(",") if o.strip() and o.strip() != "*"]
         return origins if origins else ["http://localhost:8080"]
@@ -96,9 +99,8 @@ class Settings(BaseSettings):
 
     # ── File Upload ───────────────────────────────────────────
     MAX_UPLOAD_SIZE_MB: int = 10
-    ALLOWED_IMAGE_EXTENSIONS: str = "jpg,jpeg,png,webp,bmp"
-    # Use /tmp on Render (ephemeral but always exists); local fallback to ./tmp
-    UPLOAD_TEMP_DIR: str = "/tmp/agricrop_uploads"
+    ALLOWED_IMAGE_EXTENSIONS: str = "jpg,jpeg,png,webp"
+    UPLOAD_TEMP_DIR: str = "./tmp/croppulse_uploads"
 
     @property
     def allowed_extensions(self) -> List[str]:
@@ -110,7 +112,7 @@ class Settings(BaseSettings):
 
     # ── Logging ───────────────────────────────────────────────
     LOG_LEVEL: str = "INFO"
-    LOG_FILE: str = "./logs/agricrop.log"
+    LOG_FILE: str = "./logs/croppulse.log"
 
     model_config = {
         "env_file": ".env",

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard – AgriCrop</title>
+  <title>Dashboard – CropPulse</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -13,7 +13,7 @@
 <nav class="ag-navbar">
   <div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
     <button class="d-lg-none btn-ag-icon me-2" id="sidebar-toggle">☰</button>
-    <a href="/" class="brand">🌱 AgriCrop</a>
+    <a href="/" class="brand">🌱 CropPulse</a>
     <div class="ms-auto d-flex align-items-center gap-2">
       <button id="theme-toggle" aria-label="Toggle theme"><span class="toggle-icon sun-icon">☀️</span><span class="toggle-icon moon-icon">🌙</span></button>
       <a href="notifications.html" class="nav-icon-btn position-relative" title="Notifications">
@@ -41,6 +41,9 @@
   <a href="dashboard.html" class="sidebar-link active"><span class="link-icon">🏠</span> Dashboard</a>
   <a href="upload.html" class="sidebar-link"><span class="link-icon">🌿</span> Upload Leaf</a>
   <a href="soil-prediction.html" class="sidebar-link"><span class="link-icon">💧</span> Soil Prediction</a>
+  <a href="weather.html" class="sidebar-link"><span class="link-icon">🌦️</span> Weather</a>
+  <a href="risk.html" class="sidebar-link"><span class="link-icon">⚠️</span> Risk Assessment</a>
+  <a href="irrigation.html" class="sidebar-link"><span class="link-icon">🚜</span> Irrigation</a>
   <a href="map.html" class="sidebar-link"><span class="link-icon">🗺️</span> Disease Map</a>
   <div class="sidebar-section-label">Records</div>
   <a href="history.html" class="sidebar-link"><span class="link-icon">📋</span> History</a>
@@ -61,6 +64,27 @@
     <div class="d-flex gap-2">
       <a href="upload.html" class="btn-ag-primary">🌿 New Scan</a>
       <a href="soil-prediction.html" class="btn-ag-secondary">💧 Soil Analysis</a>
+    </div>
+  </div>
+
+  <!-- Weather Quick Widget Bar -->
+  <div class="ag-card mb-4 p-3 d-flex flex-wrap align-items-center justify-content-between gap-3" id="dash-weather-bar" style="background:linear-gradient(135deg, rgba(14,165,233,0.08) 0%, rgba(34,197,94,0.08) 100%);">
+    <div class="d-flex align-items-center gap-3">
+      <div id="dash-weather-icon" style="font-size:2rem;">🌤️</div>
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-weight:700;font-size:1.1rem;" id="dash-weather-temp">--°C</span>
+          <span class="badge" id="dash-weather-cond" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);font-size:0.75rem;">Loading weather...</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);" id="dash-weather-sub">Humidity: --% | Wind: -- km/h</div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="text-end d-none d-md-block">
+        <div style="font-size:0.75rem;color:var(--text-muted);">24h Rain Chance</div>
+        <div style="font-weight:700;font-size:0.95rem;color:#0ea5e9;" id="dash-weather-rain">--%</div>
+      </div>
+      <a href="weather.html" class="btn-ag-secondary" style="font-size:0.8rem;padding:0.35rem 0.85rem;">Full Weather →</a>
     </div>
   </div>
 
@@ -93,8 +117,10 @@
         <div class="d-flex flex-column gap-2">
           <a href="upload.html" class="btn-ag-primary justify-content-center">🔬 Detect Disease</a>
           <a href="soil-prediction.html" class="btn-ag-secondary justify-content-center">💧 Predict Soil</a>
+          <a href="weather.html" class="btn-ag-secondary justify-content-center">🌤️ Weather Intel</a>
+          <a href="risk.html" class="btn-ag-secondary justify-content-center">⚠️ Risk Assessment</a>
+          <a href="irrigation.html" class="btn-ag-secondary justify-content-center">🚜 Irrigation Plan</a>
           <a href="map.html" class="btn-ag-secondary justify-content-center">🗺️ View Map</a>
-          <a href="history.html" class="btn-ag-secondary justify-content-center">📋 History</a>
         </div>
       </div>
     </div>

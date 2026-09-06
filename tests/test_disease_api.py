@@ -1,10 +1,8 @@
 """
-test_disease_api.py – Disease prediction tests (MongoDB/GridFS mocks, no Firebase)
+test_disease_api.py – Disease detection & prediction router unit tests
 """
-import io
-import struct
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -26,7 +24,6 @@ async def override_get_current_user():
 
 
 # ── Minimal valid JPEG bytes (1×1 white pixel) ────────────────────────────────
-# This is a real, tiny JPEG so PIL.Image.open + verify() passes.
 _JPEG_1X1 = bytes([
     0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
     0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xDB, 0x00, 0x43,
@@ -61,66 +58,54 @@ _JPEG_1X1 = bytes([
 
 # ── Mock AI prediction result ──────────────────────────────────────────────────
 
-MOCK_PREDICTION = {
+MOCK_DETECTION_RESULT = {
+    "prediction_id": "pred-123456",
     "disease_class_key": "Tomato___healthy",
     "disease_name": "Tomato – healthy",
-    "confidence": 0.95,
+    "crop": "Tomato",
+    "confidence": 0.96,
     "severity": "healthy",
-    "affected_area_percent": 0.0,
     "is_healthy": True,
-    "top_predictions": [],
-    "model_version": "MobileNetV2-v1",
-    "stub_mode": True,
-    "image_quality": {},
+    "image_url": "http://localhost:8000/api/v1/files/img123",
+    "has_gradcam": True,
+    "top_predictions": [
+        {"class": "Tomato – healthy", "probability": 0.96},
+        {"class": "Tomato – Early blight", "probability": 0.03},
+    ],
+    "treatments": [],
+    "prevention": [],
 }
 
 
-# ── Test: POST /api/v1/disease/predict ────────────────────────────────────────
+# ── Test: POST /api/v1/disease/detect and /predict ──────────────────────────────
 
 def test_predict_disease_success():
-    """Happy-path disease prediction with mocked GridFS, predictor and MongoDB writes."""
+    """Happy-path disease detection with mocked DiseaseService."""
     app.dependency_overrides[get_current_user] = override_get_current_user
+    try:
+        with patch("backend.routers.disease.disease_service.detect_disease", new_callable=AsyncMock) as mock_detect:
+            mock_detect.return_value = MOCK_DETECTION_RESULT
 
-    with patch("backend.routers.disease.gridfs_service") as mock_gridfs, \
-         patch("backend.routers.disease.disease_predictor") as mock_predictor, \
-         patch("backend.routers.disease._disease_svc") as mock_disease_svc, \
-         patch("backend.routers.disease._user_svc") as mock_user_svc, \
-         patch("backend.routers.disease._farm_svc") as mock_farm_svc, \
-         patch("backend.routers.disease.notification_service") as mock_notif:
+            files = {"file": ("leaf.jpg", _JPEG_1X1, "image/jpeg")}
+            response = client.post(
+                "/api/v1/disease/detect",
+                files=files,
+                data={"notes": "Test prediction"},
+            )
 
-        # GridFS upload returns a URL-like string
-        mock_gridfs.upload_leaf_image = AsyncMock(
-            return_value="gridfs://mock-image-id/leaf.jpg"
-        )
-        mock_predictor.predict.return_value = MOCK_PREDICTION
-        mock_disease_svc.create = AsyncMock(return_value=True)
-        mock_user_svc.update = AsyncMock(return_value=True)
-        mock_notif.disease_alert = AsyncMock(return_value=None)
-
-        # Send a real JPEG so PIL validation passes
-        files = {"file": ("leaf.jpg", _JPEG_1X1, "image/jpeg")}
-        response = client.post(
-            "/api/v1/disease/predict",
-            files=files,
-            data={"notes": "Test prediction"},
-        )
-
-        assert response.status_code == 201, response.text
-        data = response.json()
-        assert data["success"] is True
-        assert data["disease_name"] == "Tomato – healthy"
-        assert data["is_healthy"] is True
-        assert "image_url" in data
-
-    app.dependency_overrides.clear()
+            assert response.status_code == 201, response.text
+            data = response.json()
+            assert data["success"] is True
+            assert data["disease_name"] == "Tomato – healthy"
+            assert data["is_healthy"] is True
+            assert "image_url" in data
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_predict_disease_unauthorized():
-    """Calling predict without auth should fail; with bad image → 400 before auth."""
-    # FastAPI evaluates File(...) dependency before auth when no override is set.
-    # The validator rejects fake bytes → 400, not 401.
-    # To get a true 401, we send a valid JPEG without auth token.
+    """Calling detect without auth should return 401."""
+    app.dependency_overrides.clear()
     files = {"file": ("leaf.jpg", _JPEG_1X1, "image/jpeg")}
-    response = client.post("/api/v1/disease/predict", files=files)
-    # Auth runs first if the file is valid – expect 401 (no token)
-    assert response.status_code in (400, 401, 422)
+    response = client.post("/api/v1/disease/detect", files=files)
+    assert response.status_code in (401, 403)

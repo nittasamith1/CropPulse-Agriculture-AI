@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather Intelligence – CropPulse</title>
+  <meta name="description" content="Real-time agricultural weather data, 7-day forecasts, and crop-specific weather insights powered by Open-Meteo."/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127807;</text></svg>"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="../assets/css/main.css" rel="stylesheet"/>
+  <link href="../assets/css/dark-mode.css" rel="stylesheet"/>
+  <link href="../assets/css/animations.css" rel="stylesheet"/>
+  <style>
+    .weather-hero { background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(22,163,74,0.08)); border:1px solid rgba(37,99,235,0.2); border-radius:var(--radius-lg); padding:1.75rem; margin-bottom:1.5rem; }
+    .weather-temp { font-family:'Space Grotesk',sans-serif; font-size:3.5rem; font-weight:800; line-height:1; color:var(--text-primary); }
+    .weather-icon-lg { font-size:4rem; line-height:1; }
+    .forecast-card { padding:1rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); text-align:center; transition:all var(--trans-fast); }
+    .forecast-card:hover { border-color:var(--primary); transform:translateY(-2px); }
+    .forecast-day { font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem; }
+    .forecast-icon { font-size:1.8rem; margin:0.4rem 0; }
+    .forecast-temp { font-size:0.9rem; font-weight:700; color:var(--text-primary); }
+    .forecast-rain { font-size:0.72rem; color:var(--secondary-light); margin-top:0.25rem; }
+    .agri-metric { padding:1rem; background:var(--bg-input); border-radius:var(--radius-md); border:1px solid var(--border); }
+    .agri-metric-val { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:var(--primary-light); }
+    .agri-metric-lbl { font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-top:0.2rem; }
+    .location-form { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-end; }
+  </style>
+</head>
+<body>
+<nav class="ag-navbar"><div class="d-flex align-items-center gap-3 w-100" style="padding:0 1.5rem;">
+  <button class="d-lg-none btn-ag-icon" id="sidebar-toggle">&#9776;</button>
+  <a href="/" class="brand">&#127807; CropPulse</a>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <button id="theme-toggle"><span class="toggle-icon sun-icon">&#9728;&#65039;</span><span class="toggle-icon moon-icon">&#127769;</span></button>
+    <a href="notifications.html" class="nav-icon-btn position-relative">&#128276;<span id="notif-badge" class="badge-notif hidden">0</span></a>
+    <a href="dashboard.html" class="btn-ag-secondary" style="font-size:0.82rem;padding:0.45rem 1rem;">&#8592; Dashboard</a>
+  </div>
+</div></nav>
+
+<aside class="ag-sidebar" id="sidebar">
+  <div class="sidebar-section-label">Main</div>
+  <a href="dashboard.html" class="sidebar-link"><span class="link-icon">&#127968;</span> Dashboard</a>
+  <a href="upload.html" class="sidebar-link"><span class="link-icon">&#127807;</span> Upload Leaf</a>
+  <a href="soil-prediction.html" class="sidebar-link"><span class="link-icon">&#128167;</span> Soil Prediction</a>
+  <a href="weather.html" class="sidebar-link active"><span class="link-icon">&#127782;&#65039;</span> Weather</a>
+  <a href="risk.html" class="sidebar-link"><span class="link-icon">&#9888;&#65039;</span> Risk Assessment</a>
+  <a href="irrigation.html" class="sidebar-link"><span class="link-icon">&#128668;</span> Irrigation</a>
+  <a href="map.html" class="sidebar-link"><span class="link-icon">&#128506;&#65039;</span> Disease Map</a>
+  <div class="sidebar-section-label">Records</div>
+  <a href="history.html" class="sidebar-link"><span class="link-icon">&#128203;</span> History</a>
+  <a href="notifications.html" class="sidebar-link"><span class="link-icon">&#128276;</span> Notifications <span class="link-badge hidden" id="sidebar-notif-badge">0</span></a>
+  <div class="sidebar-section-label">Account</div>
+  <a href="profile.html" class="sidebar-link"><span class="link-icon">&#128100;</span> Profile</a>
+  <a href="#" class="sidebar-link" onclick="Auth.logout()"><span class="link-icon">&#128682;</span> Logout</a>
+</aside>
+
+<main class="ag-content-area ag-page">
+  <div class="section-header mb-4">
+    <div>
+      <h2 class="section-title">&#127782;&#65039; Weather Intelligence</h2>
+      <p class="section-subtitle">Real-time weather data and agricultural insights powered by Open-Meteo</p>
+    </div>
+  </div>
+
+  <!-- Location Input -->
+  <div class="ag-card mb-4">
+    <div class="chart-title mb-3">&#128205; Location</div>
+    <div class="location-form">
+      <div class="ag-form-group mb-0" style="flex:1;min-width:140px;">
+        <label class="ag-label">Latitude</label>
+        <div class="input-wrapper"><span class="input-icon">&#128205;</span>
+          <input type="number" id="lat-input" class="ag-input" placeholder="e.g. 18.5204" step="0.000001"/>
+        </div>
+      </div>
+      <div class="ag-form-group mb-0" style="flex:1;min-width:140px;">
+        <label class="ag-label">Longitude</label>
+        <div class="input-wrapper"><span class="input-icon">&#128205;</span>
+          <input type="number" id="lon-input" class="ag-input" placeholder="e.g. 73.8567" step="0.000001"/>
+        </div>
+      </div>
+      <button id="get-location-btn" class="btn-ag-secondary" style="height:42px;margin-top:auto;">&#128205; Auto-detect</button>
+      <button id="fetch-weather-btn" class="btn-ag-primary" style="height:42px;margin-top:auto;">&#127777;&#65039; Get Weather</button>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div id="alerts-section" class="hidden mb-4"></div>
+
+  <!-- Current Weather Hero -->
+  <div id="current-weather" class="weather-hero hidden mb-4">
+    <div class="row align-items-center g-3">
+      <div class="col-sm-6">
+        <div class="d-flex align-items-center gap-3">
+          <div class="weather-icon-lg" id="weather-icon">&#127780;&#65039;</div>
+          <div>
+            <div class="weather-temp" id="weather-temp">--&#176;C</div>
+            <div id="weather-condition" style="font-size:1rem;color:var(--text-secondary);margin-top:0.25rem;">Fetching weather...</div>
+            <div id="weather-location" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="row g-2">
+          <div class="col-6"><div class="agri-metric"><div class="agri-metric-val" id="met-humidity">--</div><div class="agri-metric-lbl">Humidity %</div></div></div>
+          <div class="col-6"><div class="agri-metric"><div class="agri-metric-val" id="met-wind">--</div><div class="agri-metric-lbl">Wind km/h</div></div></div>
+          <div class="col-6"><div class="agri-metric"><div class="agri-metric-val" id="met-precip">--</div><div class="agri-metric-lbl">Precip mm</div></div></div>
+          <div class="col-6"><div class="agri-metric"><div class="agri-metric-val" id="met-uv">--</div><div class="agri-metric-lbl">UV Index</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7-Day Forecast -->
+  <div id="forecast-section" class="hidden mb-4">
+    <div class="chart-title mb-3">&#128197; 7-Day Forecast</div>
+    <div class="row g-2" id="forecast-cards"></div>
+  </div>
+
+  <!-- Agricultural Metrics -->
+  <div id="agri-section" class="hidden mb-4">
+    <div class="ag-card">
+      <div class="chart-title mb-3">&#127806; Agricultural Metrics</div>
+      <div class="row g-3" id="agri-metrics"></div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="ag-card text-center py-5">
+    <div style="font-size:4rem;margin-bottom:1rem;">&#127782;&#65039;</div>
+    <h5 style="color:var(--text-muted);">Enter your farm location to get weather data</h5>
+    <p class="text-muted" style="font-size:0.85rem;">Powered by Open-Meteo — free, real-time meteorological data with agricultural insights</p>
+    <button id="auto-detect-empty" class="btn-ag-primary mt-2">&#128205; Auto-detect My Location</button>
+  </div>
+</main>
+
+<div id="ag-toast-container" class="ag-toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/weather.js"></script>
+<script>
+  document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
+    document.getElementById("sidebar")?.classList.toggle("open");
+  });
+</script>
+</body>
+</html>

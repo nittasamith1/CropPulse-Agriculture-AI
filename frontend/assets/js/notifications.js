@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Notifications Page JS
+﻿/**
+ * CropPulse – Notifications Page JS
  */
 
 let currentPage = 1;
@@ -18,7 +18,7 @@ async function loadNotifications() {
   Utils.showSkeleton("notifications-list", 5, "80px");
   const unreadOnly = document.getElementById("unread-only-toggle")?.checked || false;
   try {
-    const data = await AgriCropAPI.notifications.list(unreadOnly ? 1 : 0);
+    const data = await CropPulseAPI.notifications.list(unreadOnly ? 1 : 0);
     renderNotifications(data.notifications || [], data.unread_count || 0);
   } catch {
     Utils.showToast("Failed to load notifications.", "error");
@@ -66,7 +66,7 @@ function renderNotifications(notifications, unreadCount) {
 
 async function markRead(id, el) {
   try {
-    await AgriCropAPI.notifications.markRead(id);
+    await CropPulseAPI.notifications.markRead(id);
     el.style.borderLeft = "";
     el.querySelector(".unread-dot")?.remove();
     el.classList.remove("unread-notif");
@@ -81,7 +81,7 @@ async function markRead(id, el) {
 
 async function markAllRead() {
   try {
-    await AgriCropAPI.notifications.markAllRead();
+    await CropPulseAPI.notifications.markAllRead();
     Utils.showToast("All notifications marked as read.", "success");
     loadNotifications();
   } catch {

@@ -1,5 +1,5 @@
-"""
-AgriCrop – Files Router
+﻿"""
+CropPulse – Files Router
 Streams assets (images, PDFs) directly from MongoDB GridFS bucket.
 Provides clean public access for frontend display and downloads.
 """

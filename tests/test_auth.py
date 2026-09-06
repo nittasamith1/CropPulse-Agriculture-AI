@@ -1,5 +1,5 @@
 """
-test_auth.py – JWT/MongoDB-based auth tests (no Firebase)
+test_auth.py – Authentication and authorization test suite
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch

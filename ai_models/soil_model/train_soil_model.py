@@ -1,166 +1,159 @@
 """
-AgriCrop – Soil Moisture Model Training Script
-Full training pipeline using the synthetic soil moisture dataset.
-
-Dataset: datasets/soil/soil_moisture_data.csv
-Features: temperature, humidity, rainfall, wind_speed, soil_type, previous_moisture
-Target: soil_moisture (%)
-
-Usage:
-    python -m ai_models.soil_model.train_soil_model
-    (Run from the AgriCrop project root)
+CropPulse – Tabular Soil Moisture ML Training & Benchmarking Pipeline
+Benchmarks Linear Regression, Random Forest, and XGBoost Regressor.
+Selects the best model based on validation metrics (MAE, RMSE, R²) and exports to .pkl.
 """
 
 import os
 import sys
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow import keras
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
 
-from ai_models.soil_model.model_architecture import build_soil_model
+try:
+    import xgboost as xgb
+    XGB_AVAILABLE = True
+except ImportError:
+    XGB_AVAILABLE = False
 
-# ── Configuration ─────────────────────────────────────────────────────────────
 DATASET_PATH = "datasets/soil/soil_moisture_data.csv"
-OUTPUT_DIR   = "ai_models/saved_models"
-SCALER_PATH  = os.path.join(OUTPUT_DIR, "soil_scaler.pkl")
-BATCH_SIZE   = 32
-EPOCHS       = 100
-RANDOM_SEED  = 42
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-np.random.seed(RANDOM_SEED)
-tf.random.set_seed(RANDOM_SEED)
+OUTPUT_DIR = "ai_models/saved_models"
+MODEL_SAVE_PATH = os.path.join(OUTPUT_DIR, "soil_model.pkl")
+RANDOM_SEED = 42
 
 SOIL_TYPE_MAP = {"sandy": 0, "loamy": 1, "clay": 2, "silt": 3, "peaty": 4}
 
 
-def load_and_preprocess(csv_path: str):
-    """Load CSV, encode categoricals, and split into train/val/test."""
+def load_dataset(csv_path: str):
+    """Load, encode, and split dataset."""
     df = pd.read_csv(csv_path)
 
-    # Encode soil type
-    df["soil_type_idx"] = df["soil_type"].str.lower().map(SOIL_TYPE_MAP).fillna(1)
+    # Encode soil type into categorical index
+    df["soil_type_idx"] = df["soil_type"].str.lower().str.strip().map(SOIL_TYPE_MAP).fillna(1)
 
+    # Features: [temperature, humidity, rainfall, wind_speed, soil_type_idx, previous_moisture]
     feature_cols = ["temperature", "humidity", "rainfall", "wind_speed", "soil_type_idx", "previous_moisture"]
     target_col = "soil_moisture"
 
-    X = df[feature_cols].values.astype(np.float32)
-    y = (df[target_col].values / 100.0).astype(np.float32)  # Normalize to [0,1]
+    X = df[feature_cols].copy()
+    # Normalize features according to preprocessing pipeline
+    X["temperature"] = X["temperature"] / 50.0
+    X["humidity"] = X["humidity"] / 100.0
+    X["rainfall"] = X["rainfall"].clip(upper=200.0) / 200.0
+    X["wind_speed"] = X["wind_speed"].clip(upper=100.0) / 100.0
+    X["soil_type_idx"] = X["soil_type_idx"] / 4.0
+    X["previous_moisture"] = X["previous_moisture"] / 100.0
 
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.2, random_state=RANDOM_SEED)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=RANDOM_SEED)
+    X_vals = X.values.astype(np.float32)
+    y_vals = df[target_col].values.astype(np.float32)
 
-    print(f"  Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X_vals, y_vals, test_size=0.2, random_state=RANDOM_SEED
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=RANDOM_SEED
+    )
+
+    print(f"[Dataset] Train={len(X_train)} | Val={len(X_val)} | Test={len(X_test)}")
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
-def plot_training_history(history):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+def benchmark_models(X_train, X_val, y_train, y_val):
+    """Train and evaluate candidate regression models."""
+    candidates = {
+        "Linear Regression": LinearRegression(),
+        "Ridge Regression": Ridge(alpha=1.0),
+        "Random Forest": RandomForestRegressor(n_estimators=150, max_depth=8, random_state=RANDOM_SEED),
+        "Gradient Boosting": GradientBoostingRegressor(n_estimators=150, learning_rate=0.08, max_depth=4, random_state=RANDOM_SEED),
+    }
 
-    ax1.plot(history.history["mae"], label="Train MAE")
-    ax1.plot(history.history["val_mae"], label="Val MAE")
-    ax1.set_title("Mean Absolute Error"); ax1.set_xlabel("Epoch"); ax1.set_ylabel("MAE")
-    ax1.legend(); ax1.grid(True, alpha=0.3)
+    if XGB_AVAILABLE:
+        candidates["XGBoost"] = xgb.XGBRegressor(
+            n_estimators=150, learning_rate=0.08, max_depth=4, random_state=RANDOM_SEED
+        )
 
-    ax2.plot(history.history["loss"], label="Train Loss (MSE)")
-    ax2.plot(history.history["val_loss"], label="Val Loss (MSE)")
-    ax2.set_title("Loss (MSE)"); ax2.set_xlabel("Epoch"); ax2.set_ylabel("MSE")
-    ax2.legend(); ax2.grid(True, alpha=0.3)
+    results = {}
+    best_name = None
+    best_score = float("inf")  # Lower MAE is better
+    best_model = None
 
-    plt.tight_layout()
-    plot_path = os.path.join(OUTPUT_DIR, "soil_training_history.png")
-    plt.savefig(plot_path, dpi=150, bbox_inches="tight")
-    print(f"✅ Training history plot saved to {plot_path}")
+    print("\n[Benchmarking Machine Learning Models]")
+    print("=" * 65)
+    print(f"{'Model':<22} | {'MAE':<10} | {'RMSE':<10} | {'R2':<10}")
+    print("-" * 65)
+
+    for name, model in candidates.items():
+        model.fit(X_train, y_train)
+        preds = model.predict(X_val)
+
+        mae = mean_absolute_error(y_val, preds)
+        rmse = np.sqrt(mean_squared_error(y_val, preds))
+        r2 = r2_score(y_val, preds)
+
+        results[name] = {"mae": mae, "rmse": rmse, "r2": r2, "model": model}
+        print(f"{name:<22} | {mae:<10.3f} | {rmse:<10.3f} | {r2:<10.3f}")
+
+        if mae < best_score:
+            best_score = mae
+            best_name = name
+            best_model = model
+
+    print("=" * 65)
+    print(f"[Best Model] Selected: {best_name} (MAE: {best_score:.3f})\n")
+    return best_name, best_model, results
 
 
-def plot_predictions(y_true, y_pred):
-    """Scatter plot of true vs predicted moisture values."""
-    y_true_pct = y_true * 100
-    y_pred_pct = y_pred * 100
+def evaluate_and_save(best_name, best_model, X_test, y_test):
+    """Evaluate winning model on holdout test set and export checkpoint."""
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    test_preds = best_model.predict(X_test)
 
+    mae = mean_absolute_error(y_test, test_preds)
+    rmse = np.sqrt(mean_squared_error(y_test, test_preds))
+    r2 = r2_score(y_test, test_preds)
+
+    print(f"[Test Evaluation] {best_name}:")
+    print(f"   MAE:  {mae:.3f}%")
+    print(f"   RMSE: {rmse:.3f}%")
+    print(f"   R2:   {r2:.3f}")
+
+    joblib.dump(best_model, MODEL_SAVE_PATH)
+    print(f"[Saved] Model serialized to: {MODEL_SAVE_PATH}")
+
+    # Plot Scatter Plot
     plt.figure(figsize=(6, 6))
-    plt.scatter(y_true_pct, y_pred_pct, alpha=0.4, s=15, color="#1a7c3e")
-    plt.plot([0, 100], [0, 100], "r--", label="Perfect Prediction")
-    plt.xlabel("True Moisture (%)"); plt.ylabel("Predicted Moisture (%)")
-    plt.title("Soil Moisture: True vs Predicted")
-    plt.legend(); plt.grid(True, alpha=0.3)
+    plt.scatter(y_test, test_preds, alpha=0.5, s=20, color="#198754", label="Predictions")
+    min_val, max_val = min(y_test.min(), test_preds.min()), max(y_test.max(), test_preds.max())
+    plt.plot([min_val, max_val], [min_val, max_val], "r--", label="Ideal")
+    plt.xlabel("Actual Moisture (%)")
+    plt.ylabel("Predicted Moisture (%)")
+    plt.title(f"Soil Moisture: {best_name} Test Results")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
 
     plot_path = os.path.join(OUTPUT_DIR, "soil_predictions_scatter.png")
-    plt.savefig(plot_path, dpi=150, bbox_inches="tight")
-    print(f"✅ Predictions scatter plot saved to {plot_path}")
+    plt.savefig(plot_path, dpi=150)
+    plt.close()
+    print(f"[Plot] Evaluation scatter plot saved to: {plot_path}")
 
 
-def train():
-    print("=" * 60)
-    print("  AgriCrop – Soil Moisture Model Training")
-    print("=" * 60)
-    print(f"  TensorFlow: {tf.__version__}")
-    print(f"  Dataset: {DATASET_PATH}")
-
+def main():
     if not os.path.exists(DATASET_PATH):
-        print(f"\n❌ Dataset not found at '{DATASET_PATH}'")
-        print("   Run the dataset generation script first or create:")
-        print("   datasets/soil/soil_moisture_data.csv")
-        sys.exit(1)
+        print(f"[Error] Dataset not found at: {DATASET_PATH}")
+        return
 
-    # ── Load Data ──────────────────────────────────────────────────────────────
-    print("\n📂 Loading dataset...")
-    X_train, X_val, X_test, y_train, y_val, y_test = load_and_preprocess(DATASET_PATH)
-
-    # ── Build & Train ──────────────────────────────────────────────────────────
-    print("\n🏋️ Training Dense NN soil model...")
-    model = build_soil_model(input_dim=X_train.shape[1])
-    model.summary()
-
-    callbacks = [
-        keras.callbacks.EarlyStopping(patience=15, restore_best_weights=True, monitor="val_mae"),
-        keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=7, min_lr=1e-6, verbose=1),
-        keras.callbacks.ModelCheckpoint(
-            filepath=os.path.join(OUTPUT_DIR, "soil_model_best.h5"),
-            save_best_only=True, monitor="val_mae", verbose=1,
-        ),
-    ]
-
-    history = model.fit(
-        X_train, y_train,
-        validation_data=(X_val, y_val),
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
-        callbacks=callbacks,
-        verbose=1,
-    )
-
-    # ── Save Final Model ───────────────────────────────────────────────────────
-    final_path = os.path.join(OUTPUT_DIR, "soil_model.h5")
-    model.save(final_path)
-    print(f"\n✅ Final model saved to: {final_path}")
-
-    # ── Evaluate ───────────────────────────────────────────────────────────────
-    print("\n📊 Evaluation on test set:")
-    y_pred = model.predict(X_test, verbose=0).flatten()
-
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
-    print(f"   MAE:  {mae * 100:.2f}% moisture")
-    print(f"   R²:   {r2:.4f}")
-
-    # ── Plots ──────────────────────────────────────────────────────────────────
-    plot_training_history(history)
-    plot_predictions(y_test, y_pred)
-
-    print("\n🎉 Training complete!")
+    X_train, X_val, X_test, y_train, y_val, y_test = load_dataset(DATASET_PATH)
+    best_name, best_model, _ = benchmark_models(X_train, X_val, y_train, y_val)
+    evaluate_and_save(best_name, best_model, X_test, y_test)
 
 
 if __name__ == "__main__":
-    train()
+    main()

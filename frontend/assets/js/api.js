@@ -1,5 +1,5 @@
 /**
- * AgriCrop – API Client Module
+ * CropPulse – API Client Module
  * Typed wrapper around all backend REST endpoints.
  * Automatically attaches Authorization header using Auth.getToken().
  * Handles automatic JWT token refresh on 401 Unauthorized errors.
@@ -10,20 +10,18 @@
   // ── Production: always use the absolute Render backend URL ───────────────
   // Never allow API_BASE to be empty/relative in production — that causes 503s
   // when the Vercel proxy rewrite fails or Render is cold-starting.
-  const RENDER_BACKEND = "https://agricrop-backend.onrender.com";
+  const RENDER_BACKEND = "https://croppulse-backend.onrender.com";
 
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "" || window.location.protocol === "file:") {
     window.API_BASE = "http://localhost:8000";
   } else {
     // Vercel, custom domain, or any other deployment host:
     // Use BACKEND_URL injected by meta tag, or hard Render URL as fallback.
     window.API_BASE = window.BACKEND_URL || RENDER_BACKEND;
   }
-
-  console.log("🌾 AgriCrop API Base:", window.API_BASE);
 })();
 
-const AgriCropAPI = (() => {
+const CropPulseAPI = (() => {
   const BASE = () => window.API_BASE;
   let isRefreshing = false;
   let refreshSubscribers = [];
@@ -183,10 +181,51 @@ const AgriCropAPI = (() => {
     getAllReports: (page = 1) => get(`/admin/reports?page=${page}`),
   };
 
+  // ── Weather Endpoints ────────────────────────────────────────────────────
+  const weather = {
+    getCurrent: (lat, lon) => get(`/weather/current?lat=${lat}&lon=${lon}`),
+    getForecast: (lat, lon, days = 7) => get(`/weather/forecast?lat=${lat}&lon=${lon}&days=${days}`),
+    getAgri: (lat, lon) => get(`/weather/agricultural?lat=${lat}&lon=${lon}`),
+    getAlerts: (lat, lon) => get(`/weather/alerts?lat=${lat}&lon=${lon}`),
+  };
+
+  // ── Risk Endpoints ───────────────────────────────────────────────────────
+  const risk = {
+    assess: (payload) => post("/risk/assess", payload),
+    evaluate: (payload) => post("/risk/evaluate", payload),
+    get: (farmId, crop, lat, lon) => {
+      const q = new URLSearchParams();
+      if (farmId) q.append("farm_id", farmId);
+      if (crop) q.append("crop", crop);
+      if (lat != null) q.append("lat", lat);
+      if (lon != null) q.append("lon", lon);
+      return get(`/risk?${q.toString()}`);
+    },
+    getHistory: (page = 1, pageSize = 10) => get(`/risk/history?page=${page}&page_size=${pageSize}`),
+  };
+
+  // ── Irrigation Endpoints ─────────────────────────────────────────────────
+  const irrigation = {
+    recommend: (payload) => post("/irrigation/recommend", payload),
+    calculate: (payload) => post("/irrigation/calculate", payload),
+    getRecommendation: (farmId, crop, growthStage, soilType, lat, lon) => {
+      const q = new URLSearchParams();
+      if (farmId) q.append("farm_id", farmId);
+      if (crop) q.append("crop", crop);
+      if (growthStage) q.append("growth_stage", growthStage);
+      if (soilType) q.append("soil_type", soilType);
+      if (lat != null) q.append("lat", lat);
+      if (lon != null) q.append("lon", lon);
+      return get(`/irrigation/recommendation?${q.toString()}`);
+    },
+    getSchedule: (farmId) => get(`/irrigation/schedule/${farmId}`),
+    getHistory: (page = 1, pageSize = 10) => get(`/irrigation/history?page=${page}&page_size=${pageSize}`),
+  };
+
   // ── Health Check ────────────────────────────────────────────────────────
   const health = () => fetch(`${BASE()}/api/health`).then(r => r.json()).catch(e => ({ status: "unhealthy", error: e.message }));
 
-  return { auth, disease, soil, map, history, notifications, reports, admin, health, request };
+  return { auth, disease, soil, weather, risk, irrigation, map, history, notifications, reports, admin, health, request };
 })();
 
-window.AgriCropAPI = AgriCropAPI;
+window.CropPulseAPI = CropPulseAPI;

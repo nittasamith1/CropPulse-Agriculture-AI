@@ -1,12 +1,12 @@
 /**
- * AgriCrop – Frontend Authentication Module
- * JWT-based Authentication (no Firebase SDK).
+ * CropPulse – Frontend Authentication Module
+ * JWT-based Authentication.
  * Handles login, register, logout, password reset,
  * route protection, and user session management via localStorage.
  */
 
 const Auth = (() => {
-  const API = () => window.AgriCropAPI;
+  const API = () => window.CropPulseAPI;
 
   // ── Local Storage Keys ──────────────────────────────────────────────────
   const ACCESS_TOKEN_KEY = "ag_access_token";

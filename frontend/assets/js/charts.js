@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Charts Module
+﻿/**
+ * CropPulse – Charts Module
  * Chart.js chart builders for dashboard and analytics pages.
  */
 

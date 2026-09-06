@@ -1,5 +1,5 @@
-"""
-AgriCrop – Shared FastAPI Dependencies
+﻿"""
+CropPulse – Shared FastAPI Dependencies
 Provides reusable dependency-injected services:
   - JWT token verification and decoding
   - Current user retrieval (MongoDB)

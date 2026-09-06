@@ -1,26 +1,73 @@
 /**
- * AgriCrop – Dashboard JS
+ * CropPulse – Dashboard JS
  * Loads stats, charts, recent predictions, farms, and notification badge.
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
   Auth.requireAuth();
+  if (!Auth.isLoggedIn()) {
+    return;
+  }
+
   Utils.showSkeleton("stats-grid", 4, "100px");
   Utils.showSkeleton("recent-disease-list", 3, "70px");
   Utils.showSkeleton("recent-soil-list", 3, "70px");
 
+  let data = null;
   try {
-    const data = await AgriCropAPI.history.getDashboard();
-    renderStats(data);
-    renderCharts(data);
-    renderRecentPredictions(data);
-    renderFarms(data.farms || []);
-    loadUnreadCount();
-    Utils.initEntranceAnimations();
+    data = await CropPulseAPI.history.getDashboard();
   } catch (e) {
-    Utils.showToast("Failed to load dashboard data.", "error");
-    console.error(e);
+    console.warn("Dashboard API fetch notice:", e);
+    if (e.message && (e.message.includes("401") || e.message.includes("Session expired"))) {
+      window.location.href = "login.html";
+      return;
+    }
+    // Graceful fallback for empty initial profile or connecting server
+    data = {
+      total_predictions: 0,
+      total_disease_predictions: 0,
+      total_soil_predictions: 0,
+      total_farms: 0,
+      farms: [],
+      recent_disease_predictions: [],
+      recent_soil_predictions: [],
+      severity_breakdown: { healthy: 0, mild: 0, moderate: 0, severe: 0, uncertain: 0 },
+      healthy_count: 0,
+      diseased_count: 0,
+      average_soil_moisture: 0,
+      irrigation_needed_count: 0,
+      monthly_disease_counts: {},
+      monthly_soil_counts: {},
+    };
   }
+
+  try {
+    renderStats(data);
+  } catch (e) {
+    console.error("Error rendering stats:", e);
+  }
+
+  try {
+    renderCharts(data);
+  } catch (e) {
+    console.error("Error rendering charts:", e);
+  }
+
+  try {
+    renderRecentPredictions(data);
+  } catch (e) {
+    console.error("Error rendering recent predictions:", e);
+  }
+
+  try {
+    renderFarms(data.farms || []);
+  } catch (e) {
+    console.error("Error rendering farms:", e);
+  }
+
+  loadUnreadCount();
+  loadDashboardWeather(data.farms || []);
+  Utils.initEntranceAnimations();
 });
 
 function renderStats(data) {
@@ -100,9 +147,24 @@ function buildStatsHTML(data) {
 }
 
 function renderCharts(data) {
-  Charts.renderSeverityDonut("severity-chart", data.severity_breakdown || {});
-  Charts.renderMonthlyBar("monthly-chart", data.monthly_disease_counts, data.monthly_soil_counts);
-  Charts.renderHealthPie("health-pie-chart", data.healthy_count || 0, data.diseased_count || 0);
+  try {
+    const sev = data.severity_breakdown || { healthy: 0, mild: 0, moderate: 0, severe: 0 };
+    Charts.renderSeverityDonut("severity-chart", sev);
+  } catch (e) {
+    console.warn("Severity chart render failed:", e);
+  }
+
+  try {
+    Charts.renderMonthlyBar("monthly-chart", data.monthly_disease_counts || {}, data.monthly_soil_counts || {});
+  } catch (e) {
+    console.warn("Monthly chart render failed:", e);
+  }
+
+  try {
+    Charts.renderHealthPie("health-pie-chart", data.healthy_count || 0, data.diseased_count || 0);
+  } catch (e) {
+    console.warn("Health pie chart render failed:", e);
+  }
 }
 
 function renderRecentPredictions(data) {
@@ -182,11 +244,42 @@ function renderFarms(farms) {
 
 async function loadUnreadCount() {
   try {
-    const res = await AgriCropAPI.notifications.unreadCount();
+    const res = await CropPulseAPI.notifications.unreadCount();
     const badge = document.getElementById("notif-badge");
     if (badge && res.unread_count > 0) {
       badge.textContent = res.unread_count;
       badge.classList.remove("hidden");
     }
   } catch (e) { /* silent */ }
+}
+
+async function loadDashboardWeather(farms) {
+  try {
+    let lat = 17.3850;
+    let lon = 78.4867;
+    if (farms && farms.length > 0 && farms[0].latitude && farms[0].longitude) {
+      lat = farms[0].latitude;
+      lon = farms[0].longitude;
+    }
+
+    const cur = await CropPulseAPI.weather.getCurrent(lat, lon);
+    const forecast = await CropPulseAPI.weather.getForecast(lat, lon, 2).catch(() => null);
+
+    const tempEl = document.getElementById("dash-weather-temp");
+    if (tempEl) tempEl.textContent = `${cur.temperature != null ? cur.temperature.toFixed(1) : "--"}°C`;
+
+    const condEl = document.getElementById("dash-weather-cond");
+    if (condEl) condEl.textContent = cur.condition || "Clear";
+
+    const subEl = document.getElementById("dash-weather-sub");
+    if (subEl) subEl.textContent = `Humidity: ${cur.humidity || "--"}% | Wind: ${cur.wind_speed || "--"} km/h | Pressure: ${cur.surface_pressure ? Math.round(cur.surface_pressure) : "--"} hPa`;
+
+    const rainEl = document.getElementById("dash-weather-rain");
+    if (rainEl && forecast) {
+      rainEl.textContent = `${forecast.next_24h_rain_probability != null ? Math.round(forecast.next_24h_rain_probability) : "--"}%`;
+    }
+  } catch (e) {
+    const condEl = document.getElementById("dash-weather-cond");
+    if (condEl) condEl.textContent = "Weather unavailable";
+  }
 }

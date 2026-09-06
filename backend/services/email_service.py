@@ -1,5 +1,5 @@
-"""
-AgriCrop – Email Service
+﻿"""
+CropPulse – Email Service
 Asynchronously sends account verification and password reset emails using aiosmtplib.
 Gracefully handles SMTP credentials unavailability by logging link info to stdout/stderr.
 """
@@ -47,13 +47,13 @@ class EmailService:
     async def send_verification_email(self, email: str, token: str):
         """Send account verification/activation email."""
         link = f"{settings.FRONTEND_URL}/pages/login.html?verify_token={token}"
-        subject = "🌱 Verify Your AgriCrop Account"
+        subject = "🌱 Verify Your CropPulse Account"
         
-        body_text = f"Welcome to AgriCrop!\n\nPlease activate your account by visiting the link: {link}"
+        body_text = f"Welcome to CropPulse!\n\nPlease activate your account by visiting the link: {link}"
         body_html = f"""
         <html>
             <body>
-                <h2 style="color: #2E7D32;">🌱 Welcome to AgriCrop!</h2>
+                <h2 style="color: #2E7D32;">🌱 Welcome to CropPulse!</h2>
                 <p>Thank you for signing up. Please click the button below to verify your email and activate your account:</p>
                 <p style="margin: 20px 0;">
                     <a href="{link}" style="background-color: #2E7D32; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
@@ -69,13 +69,13 @@ class EmailService:
     async def send_password_reset_email(self, email: str, token: str):
         """Send password reset email."""
         link = f"{settings.FRONTEND_URL}/pages/reset-password.html?token={token}"
-        subject = "🔑 Reset Your AgriCrop Password"
+        subject = "🔑 Reset Your CropPulse Password"
         
-        body_text = f"Reset your AgriCrop password.\n\nPlease reset your password by visiting the link: {link}"
+        body_text = f"Reset your CropPulse password.\n\nPlease reset your password by visiting the link: {link}"
         body_html = f"""
         <html>
             <body>
-                <h2 style="color: #2E7D32;">🔑 AgriCrop Password Reset</h2>
+                <h2 style="color: #2E7D32;">🔑 CropPulse Password Reset</h2>
                 <p>You requested a password reset for your account. Click the button below to set a new password:</p>
                 <p style="margin: 20px 0;">
                     <a href="{link}" style="background-color: #2E7D32; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>

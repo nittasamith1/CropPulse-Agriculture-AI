@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Settings – AgriCrop</title>
+  <title>Settings – CropPulse</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌱</text></svg>"/>
   
   <!-- Google Fonts -->
@@ -28,7 +28,7 @@
     <div class="container-fluid px-4">
       <a class="navbar-brand d-flex align-items-center" href="dashboard.html">
         <span class="brand-logo me-2">🌱</span>
-        <span class="brand-text">AgriCrop</span>
+        <span class="brand-text">CropPulse</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
@@ -58,7 +58,7 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-              <img id="nav-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=AgriCrop" alt="Avatar" class="rounded-circle me-2" width="32" height="32"/>
+              <img id="nav-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=CropPulse" alt="Avatar" class="rounded-circle me-2" width="32" height="32"/>
               <span id="nav-username">Farmer</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow">
@@ -298,7 +298,7 @@
         }
 
         try {
-          const res = await AgriCropAPI.request("POST", "/auth/change-password", {
+          const res = await CropPulseAPI.request("POST", "/auth/change-password", {
             current_password: currentPass,
             new_password: newPass
           });

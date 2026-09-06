@@ -1,7 +1,7 @@
 """
-AgriCrop – Pydantic Models: Prediction
-Defines schemas for disease detection and soil moisture prediction
-requests, responses, and history records.
+CropPulse – Pydantic Models: Prediction & Intelligence
+Defines schemas for disease detection, soil moisture prediction,
+history records, and report requests.
 """
 
 from datetime import datetime
@@ -11,6 +11,12 @@ from pydantic import BaseModel, Field
 
 # ── Disease Detection ─────────────────────────────────────────────────────────
 
+class TopClassPrediction(BaseModel):
+    class_key: str
+    display_name: str
+    confidence: float
+
+
 class DiseaseDetectionResponse(BaseModel):
     """Result returned after processing a leaf image."""
     prediction_id: str
@@ -18,19 +24,25 @@ class DiseaseDetectionResponse(BaseModel):
     farm_id: Optional[str] = None
     image_url: str
     disease_name: str
+    disease_class_key: Optional[str] = None
     confidence: float = Field(..., ge=0.0, le=1.0)
     severity: str  # "healthy" | "mild" | "moderate" | "severe"
-    affected_area_percent: float
+    is_healthy: bool = False
+    affected_area_percent: Optional[float] = 0.0
     crop_type: Optional[str] = None
     treatments: List[str] = []
     prevention_tips: List[str] = []
     recommended_pesticides: List[str] = []
+    organic_remedies: List[str] = []
+    top_3: List[TopClassPrediction] = []
+    explanation_available: bool = False
+    explanation_data_uri: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     district: Optional[str] = None
     state: Optional[str] = None
     created_at: datetime
-    model_version: str = "MobileNetV2-v1"
+    model_version: str = "EfficientNet-B0"
 
 
 class DiseasePredictionHistory(BaseModel):
@@ -56,13 +68,9 @@ class SoilPredictionRequest(BaseModel):
     soil_type: str = Field(default="loamy", description="sandy|loamy|clay|silt|peaty")
     previous_moisture: float = Field(default=50.0, ge=0, le=100, description="Previous moisture %")
     farm_id: Optional[str] = None
+    crop_type: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-
-    @classmethod
-    def soil_type_to_index(cls, soil_type: str) -> int:
-        mapping = {"sandy": 0, "loamy": 1, "clay": 2, "silt": 3, "peaty": 4}
-        return mapping.get(soil_type.lower(), 1)
 
 
 class SoilPredictionResponse(BaseModel):
@@ -73,14 +81,18 @@ class SoilPredictionResponse(BaseModel):
     predicted_moisture: float
     water_requirement_mm: float
     irrigation_recommended: bool
-    irrigation_type: str  # "drip" | "sprinkler" | "flood" | "none"
-    next_irrigation_hours: Optional[int] = None
+    irrigation_action: Optional[str] = "MONITOR"
+    irrigation_reason: Optional[str] = None
+    irrigation_type: str = "drip"
+    litres_per_hectare: Optional[int] = 0
+    priority: Optional[str] = "low"
     recommendation_text: str
     input_features: Dict[str, Any]
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    disclaimer: Optional[str] = None
     created_at: datetime
-    model_version: str = "DenseNN-v1"
+    model_version: str = "XGBoost-v1"
 
 
 class SoilPredictionHistory(BaseModel):
@@ -93,13 +105,14 @@ class SoilPredictionHistory(BaseModel):
     farm_id: Optional[str] = None
 
 
-# ── Combined History ──────────────────────────────────────────────────────────
+# ── Combined Paginated History ────────────────────────────────────────────────
 
 class PredictionHistoryResponse(BaseModel):
     """Paginated combined prediction history."""
     total: int
     page: int
     page_size: int
+    total_pages: int
     disease_predictions: List[DiseasePredictionHistory] = []
     soil_predictions: List[SoilPredictionHistory] = []
 
@@ -112,9 +125,9 @@ class NotificationModel(BaseModel):
     user_id: str
     title: str
     message: str
-    type: str  # "disease_alert" | "soil_alert" | "system" | "report_ready"
-    is_read: bool = False
-    related_id: Optional[str] = None  # prediction_id or report_id
+    type: str
+    read: bool = False
+    data: Optional[Dict[str, Any]] = None
     created_at: datetime
 
 
@@ -122,11 +135,9 @@ class NotificationModel(BaseModel):
 
 class ReportRequest(BaseModel):
     """Request to generate a PDF report."""
-    report_type: str = Field(..., pattern="^(disease|soil|combined|admin)$")
+    report_type: str = Field(..., pattern="^(disease|soil|combined|farm_health)$")
     farm_id: Optional[str] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
-    include_charts: bool = True
+    prediction_ids: Optional[List[str]] = None
 
 
 class ReportResponse(BaseModel):
@@ -134,7 +145,7 @@ class ReportResponse(BaseModel):
     report_id: str
     user_id: str
     report_type: str
-    file_url: str
-    file_name: str
+    title: str
+    pdf_url: str
+    prediction_count: int
     created_at: datetime
-    expires_at: Optional[datetime] = None

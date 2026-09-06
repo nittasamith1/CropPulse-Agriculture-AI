@@ -1,5 +1,5 @@
-"""
-AgriCrop – Helper Utilities
+﻿"""
+CropPulse – Helper Utilities
 Common utilities for ID generation, timestamp handling, data sanitization, etc.
 """
 

@@ -1,5 +1,5 @@
-/**
- * AgriCrop – Admin Panel JS
+﻿/**
+ * CropPulse – Admin Panel JS
  * Handles admin dashboard analytics, user management, and outbreak monitoring.
  */
 
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function initAdminDashboard() {
   try {
     Utils.showLoading("Loading admin dashboard...");
-    const data = await AgriCropAPI.admin.getAnalytics();
+    const data = await CropPulseAPI.admin.getAnalytics();
     Utils.hideLoading();
     renderAdminStats(data);
     renderAdminCharts(data);
@@ -63,7 +63,7 @@ async function loadOutbreaks() {
   const el = document.getElementById("outbreak-list");
   if (!el) return;
   try {
-    const data = await AgriCropAPI.admin.getOutbreaks("severe");
+    const data = await CropPulseAPI.admin.getOutbreaks("severe");
     if (!data.hotspots?.length && !data.outbreaks?.length) {
       el.innerHTML = '<div class="text-muted text-center py-3">No severe outbreaks detected.</div>';
       return;
@@ -105,7 +105,7 @@ async function initUserManagement() {
 async function loadUsers() {
   Utils.showSkeleton("users-table-body", 5, "50px");
   try {
-    const data = await AgriCropAPI.admin.getUsers(usersPage, usersRole);
+    const data = await CropPulseAPI.admin.getUsers(usersPage, usersRole);
     renderUsersTable(data);
   } catch { Utils.showToast("Failed to load users.", "error"); }
 }
@@ -165,7 +165,7 @@ function filterUserRows(term) {
 
 async function toggleUserStatus(uid) {
   try {
-    const res = await AgriCropAPI.admin.toggleStatus(uid);
+    const res = await CropPulseAPI.admin.toggleStatus(uid);
     Utils.showToast(res.message, "success");
     loadUsers();
   } catch { Utils.showToast("Failed to update user status.", "error"); }
@@ -174,7 +174,7 @@ async function toggleUserStatus(uid) {
 async function deleteUser(uid, name) {
   if (!confirm(`Are you sure you want to delete user "${name}"?\nThis action cannot be undone.`)) return;
   try {
-    await AgriCropAPI.admin.deleteUser(uid);
+    await CropPulseAPI.admin.deleteUser(uid);
     document.getElementById(`user-row-${uid}`)?.remove();
     Utils.showToast(`User "${name}" deleted.`, "success");
   } catch (e) { Utils.showToast(e.message || "Delete failed.", "error"); }
@@ -184,7 +184,7 @@ async function deleteUser(uid, name) {
 async function initAnalytics() {
   try {
     Utils.showLoading("Loading analytics...");
-    const data = await AgriCropAPI.admin.getAnalytics();
+    const data = await CropPulseAPI.admin.getAnalytics();
     Utils.hideLoading();
     renderAdminStats(data);
     renderAdminCharts(data);
@@ -197,7 +197,7 @@ async function initAnalytics() {
 // ── Admin Reports ───────────────────────────────────────────────────────────
 async function initAdminReports() {
   try {
-    const data = await AgriCropAPI.admin.getAllReports();
+    const data = await CropPulseAPI.admin.getAllReports();
     const tbody = document.getElementById("reports-table-body");
     if (!tbody) return;
     if (!data.reports?.length) {

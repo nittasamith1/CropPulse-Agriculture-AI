@@ -1,5 +1,5 @@
 # =====================================================
-# AgriCrop – .gitignore
+# CropPulse – .gitignore
 # =====================================================
 
 # ----- Environment & Secrets -----
@@ -49,6 +49,9 @@ venv.bak/
 *.ipynb
 
 # ----- AI Models & Large Files -----
+ai_models/disease_model/*.pth
+ai_models/disease_model/*.pt
+ai_models/soil_model/*.pkl
 ai_models/saved_models/*.h5
 ai_models/saved_models/*.pkl
 ai_models/saved_models/*.pt

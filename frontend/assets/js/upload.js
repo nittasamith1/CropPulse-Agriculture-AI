@@ -1,5 +1,5 @@
 /**
- * AgriCrop – Upload Page JS
+ * CropPulse – Upload Page JS
  * Handles drag-and-drop image upload, preview, form submission,
  * and progress display for disease detection.
  */
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Load user's farms ───────────────────────────────────────────────────
   async function loadFarms() {
     try {
-      const res = await AgriCropAPI.auth.getMyFarms();
+      const res = await CropPulseAPI.auth.getMyFarms();
       const farms = res.farms || [];
       farmSelect.innerHTML = '<option value="">No specific farm</option>';
       farms.forEach(f => {
@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
     reader.onload = e => {
       previewEl.src = e.target.result;
+      sessionStorage.setItem("ag_last_uploaded_preview", e.target.result);
       previewWrap.classList.remove("hidden");
       previewEl.classList.add("img-preview-enter");
       uploadBtn.disabled = false;
@@ -126,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (progressBar) progressBar.querySelector(".ag-progress-bar").style.width = "60%";
 
-      const result = await AgriCropAPI.disease.predict(formData);
+      const result = await CropPulseAPI.disease.predict(formData);
 
       if (progressBar) progressBar.querySelector(".ag-progress-bar").style.width = "100%";
 

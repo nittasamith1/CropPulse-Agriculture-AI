@@ -1,4 +1,4 @@
-name: AgriCrop CI/CD Pipeline
+name: CropPulse CI/CD Pipeline
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
       - name: Run Tests
         env:
           APP_ENV: testing
-          FIREBASE_PROJECT_ID: agricrop-test
+          MONGODB_DB_NAME: croppulse_test
         run: |
           pytest tests/ -v
 
@@ -52,7 +52,7 @@ jobs:
           context: .
           file: Dockerfile.backend
           push: false
-          tags: agricrop-backend:latest
+          tags: CropPulse-backend:latest
 
       - name: Build Frontend Image
         uses: docker/build-push-action@v4
@@ -60,4 +60,4 @@ jobs:
           context: .
           file: Dockerfile.frontend
           push: false
-          tags: agricrop-frontend:latest
+          tags: CropPulse-frontend:latest

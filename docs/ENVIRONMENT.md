@@ -1,48 +1,90 @@
-# ⚙️ Environment Variables Guide
+﻿# CropPulse – Environment Variables Reference
 
-The `.env` file is crucial for the AgriCrop application. It contains secrets, configuration paths, and Firebase credentials.
+The `.env` file is crucial for the CropPulse application. It contains secrets and configuration for MongoDB, JWT auth, AI models, SMTP email, and CORS.
 
-**⚠️ NEVER commit the `.env` file or `serviceAccountKey.json` to version control.**
+Copy `.env.example` → `.env` and fill in the values. **Never commit `.env` to version control.**
 
-## Variable Breakdown
+---
 
-### Application
-- `APP_NAME`: Name of the application (e.g., AgriCrop)
-- `APP_ENV`: Environment mode (`development` or `production`)
-- `APP_PORT`: Port for the FastAPI backend (e.g., `8000`)
-- `SECRET_KEY`: A strong, random 32+ character string used for signing JWTs.
-- `ALGORITHM`: JWT algorithm (e.g., `HS256`)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: How long JWTs remain valid (e.g., `60`).
+## Required Variables
 
-### Firebase Admin SDK (Backend)
-These variables are used by the FastAPI backend to verify tokens and interact with Firebase securely.
-- `FIREBASE_PROJECT_ID`: Your Firebase Project ID (e.g., `agricrop-a8352`)
-- `FIREBASE_PRIVATE_KEY_ID`: From `serviceAccountKey.json`
-- `FIREBASE_PRIVATE_KEY`: From `serviceAccountKey.json` (Ensure line breaks are preserved as `\n`)
-- `FIREBASE_CLIENT_EMAIL`: The service account email
-- `FIREBASE_CLIENT_ID`: Service account client ID
-- `FIREBASE_SERVICE_ACCOUNT_PATH`: Path to the local JSON file (e.g., `./serviceAccountKey.json`). *Note: In production, it's safer to use the individual environment variables instead of the file.*
+| Variable | Description | Example |
+|---|---|---|
+| `MONGODB_URI` | MongoDB Atlas connection string | `mongodb+srv://user:pass@cluster.mongodb.net/` |
+| `MONGODB_DB_NAME` | Database name | `croppulse` |
+| `SECRET_KEY` | JWT signing secret (32+ chars, random) | `openssl rand -hex 32` |
 
-### Firebase Client (Frontend)
-These variables configure the public-facing Firebase Web SDK.
-- `FIREBASE_API_KEY`: Web API Key
-- `FIREBASE_AUTH_DOMAIN`: e.g., `agricrop-a8352.firebaseapp.com`
-- `FIREBASE_STORAGE_BUCKET`: e.g., `agricrop-a8352.firebasestorage.app`
-- `FIREBASE_MESSAGING_SENDER_ID`: Sender ID
-- `FIREBASE_APP_ID`: Web App ID
-- `FIREBASE_MEASUREMENT_ID`: Google Analytics ID
+---
 
-### File Uploads & Storage
-- `MAX_UPLOAD_SIZE_MB`: Max size in MB (e.g., `10`)
-- `UPLOAD_TEMP_DIR`: Local path to temporarily store uploads before processing (e.g., `./tmp/agricrop_uploads`)
-- `FIREBASE_STORAGE_URL`: e.g., `gs://agricrop-a8352.firebasestorage.app`
+## AI Model Paths
 
-### AI Models
-- `DISEASE_MODEL_PATH`: Path to the disease `.h5` model (e.g., `./ai_models/saved_models/disease_model.h5`)
-- `SOIL_MODEL_PATH`: Path to the soil `.h5` model
-- `MODEL_CONFIDENCE_THRESHOLD`: Minimum confidence to accept a prediction (e.g., `0.65`)
+| Variable | Description | Default |
+|---|---|---|
+| `DISEASE_MODEL_PATH` | Path to EfficientNet-B0 `.pth` weights | `ai_models/disease_model/disease_model.pth` |
+| `SOIL_MODEL_PATH` | Path to XGBoost/sklearn `.pkl` pipeline | `ai_models/soil_model/soil_model.pkl` |
 
-### Security
-- `ALLOWED_ORIGINS`: Comma-separated list of CORS origins allowed to hit the backend.
-- `RATE_LIMIT_REQUESTS`: Max requests per window.
-- `RATE_LIMIT_WINDOW_SECONDS`: Time window for rate limiting.
+> When model files are absent, the platform runs in **stub mode** and clearly labels responses with `stub_mode: true`.
+
+---
+
+## JWT Configuration
+
+| Variable | Description | Default |
+|---|---|---|
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime | `60` |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime | `30` |
+
+---
+
+## Email (SMTP) — Optional
+
+| Variable | Description |
+|---|---|
+| `EMAIL_ENABLED` | Set to `true` to enable SMTP email |
+| `SMTP_HOST` | SMTP server hostname (e.g., `smtp.gmail.com`) |
+| `SMTP_PORT` | SMTP port (default: `587`) |
+| `SMTP_USER` | SMTP sender email address |
+| `SMTP_PASSWORD` | SMTP password or app-specific password |
+| `FROM_EMAIL` | Sender display email |
+
+---
+
+## CORS & Server
+
+| Variable | Description | Default |
+|---|---|---|
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed origins | `http://localhost:8080` |
+| `LOG_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARNING` | `INFO` |
+
+---
+
+## Example `.env`
+
+```ini
+# -- Required ------------------------------------------------------------------
+MONGODB_URI=mongodb+srv://myuser:mypassword@cluster0.abc.mongodb.net/
+MONGODB_DB_NAME=croppulse
+SECRET_KEY=change_me_to_a_32_char_random_string
+
+# -- AI Models -----------------------------------------------------------------
+DISEASE_MODEL_PATH=ai_models/disease_model/disease_model.pth
+SOIL_MODEL_PATH=ai_models/soil_model/soil_model.pkl
+
+# -- JWT -----------------------------------------------------------------------
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=30
+
+# -- Email (optional) ----------------------------------------------------------
+EMAIL_ENABLED=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+FROM_EMAIL=noreply@croppulse.com
+
+# -- CORS ----------------------------------------------------------------------
+ALLOWED_ORIGINS=http://localhost:8080,https://your-app.vercel.app
+
+# -- Logging -------------------------------------------------------------------
+LOG_LEVEL=INFO
+```

@@ -1,8 +1,7 @@
 """
-AgriCrop – Auth Middleware
+CropPulse – Auth Middleware
 Provides JWT token verification as middleware and utility functions
 for extracting user context from requests.
-Replaces Firebase completely with JWT.
 """
 
 from fastapi import Request, HTTPException, status

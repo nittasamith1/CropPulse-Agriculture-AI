@@ -1,5 +1,5 @@
-"""
-AgriCrop – Map Router
+﻿"""
+CropPulse – Map Router
 GET /api/v1/map/markers         – All farm markers with disease status
 GET /api/v1/map/heatmap         – Heatmap data points
 GET /api/v1/map/disease-hotspots – Disease outbreak clusters

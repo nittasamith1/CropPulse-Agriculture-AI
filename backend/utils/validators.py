@@ -1,5 +1,5 @@
 """
-AgriCrop – Validators
+CropPulse – Validators
 Request/file validation utilities for API endpoints.
 """
 
@@ -68,7 +68,7 @@ async def validate_image_upload(
     max_bytes = max_size_mb * 1024 * 1024
     if len(content) > max_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"File too large. Maximum size: {max_size_mb}MB.",
         )
 
@@ -123,7 +123,7 @@ def validate_soil_prediction_input(
 
     if errors:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="; ".join(errors),
         )
 
@@ -132,13 +132,13 @@ def validate_coordinates(latitude: float, longitude: float) -> None:
     """Validate geographic coordinates."""
     if not -90 <= latitude <= 90:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Latitude must be between -90 and 90.",
         )
 
     if not -180 <= longitude <= 180:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Longitude must be between -180 and 180.",
         )
 
