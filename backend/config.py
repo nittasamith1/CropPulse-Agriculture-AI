@@ -7,8 +7,17 @@ MongoDB Atlas + PyTorch + Open-Meteo + JWT.
 """
 
 import os
+import sys
 from functools import lru_cache
 from typing import List
+
+# Bootstrap sys.path so 'backend.*' imports succeed regardless of cwd
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PARENT_DIR = os.path.dirname(_CURRENT_DIR)
+for _path in (_PARENT_DIR, _CURRENT_DIR):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
 from pydantic_settings import BaseSettings
 
 
@@ -115,7 +124,10 @@ class Settings(BaseSettings):
     LOG_FILE: str = "./logs/croppulse.log"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": (
+            ".env",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
+        ),
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "ignore",

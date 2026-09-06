@@ -1,4 +1,10 @@
-# All Python Package __init__.py Files
+# CropPulse Backend Package
+import os
+import sys
 
-# This file intentionally left minimal.
-# Python treats directories with __init__.py as packages.
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PARENT_DIR = os.path.dirname(_CURRENT_DIR)
+for _p in (_PARENT_DIR, _CURRENT_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+

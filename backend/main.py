@@ -9,6 +9,14 @@ import os
 import sys
 import time
 from contextlib import asynccontextmanager
+
+# Bootstrap sys.path so 'backend.*' imports succeed whether cwd is repo root or backend/
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PARENT_DIR = os.path.dirname(_CURRENT_DIR)
+for _path in (_PARENT_DIR, _CURRENT_DIR):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
 from loguru import logger
 
 from fastapi import FastAPI, Request, HTTPException
